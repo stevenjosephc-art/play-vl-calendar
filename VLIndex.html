@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>">
   <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&family=Google+Sans+Display:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <title>Google Play VL Calendar</title>
   <style>
     :root {
@@ -316,7 +317,18 @@
     .ac-wg-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;background:var(--bg-cell-hover);color:var(--text-muted);border:1px solid transparent;transition:all .15s;font-family:'Google Sans'}
     .ac-wg-chip input{display:none}
     .ac-wg-chip:has(input:checked){background:var(--blue-bg);color:var(--blue-txt);border-color:var(--blue-border)}
-    .ac-body{padding:0;overflow-y:auto;background:var(--bg-page);flex:1}
+    .ac-body{padding:0;overflow-y:auto;background:var(--bg-page);flex:1;position:relative}
+    .ac-insights{padding:28px;display:none;flex-direction:column;gap:32px;animation:fadeIn 0.3s ease}
+    .ac-insights.on{display:flex}
+    .insight-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:24px}
+    .insight-card{background:var(--bg-surface);border-radius:var(--radius-lg);padding:24px;border:1px solid var(--border-grid);box-shadow:var(--shadow-sm)}
+    .ic-title{font-family:'Google Sans';font-size:16px;font-weight:600;color:var(--text-title);margin-bottom:20px;display:flex;align-items:center;gap:8px}
+    .chart-bar-container{display:flex;flex-direction:column;gap:12px}
+    .c-bar-row{display:flex;align-items:center;gap:12px}
+    .c-bar-lbl{font-size:12px;color:var(--text-muted);width:80px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .c-bar-track{flex:1;height:8px;background:var(--bg-cell-hover);border-radius:4px;overflow:hidden}
+    .c-bar-fill{height:100%;background:var(--blue-main);border-radius:4px;transition:width 1s cubic-bezier(0.4, 0, 0.2, 1)}
+    .c-bar-val{font-size:12px;font-weight:700;color:var(--text-main);width:30px;text-align:right}
 
     /* QoL #4: sticky admin action column */
     .ac-table{width:100%;border-collapse:collapse;text-align:left;font-size:13px;background:var(--bg-surface)}
@@ -328,6 +340,8 @@
     .ac-table tr:last-child td{border-bottom:none}
     .ac-table tr:hover td{background:var(--bg-cell-hover)}
     .ac-table tr:hover td.sticky-col{background:var(--bg-cell-hover)}
+    .ac-table tbody tr{animation:rowEnter 0.4s ease backwards}
+    @keyframes rowEnter{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
     .ac-table tbody tr:nth-child(even) td{background:rgba(0,0,0,.015)}
     .ac-table tbody tr:nth-child(even) td.sticky-col{background:rgba(0,0,0,.015)}
     .ac-table tbody tr:nth-child(even):hover td,.ac-table tbody tr:nth-child(even):hover td.sticky-col{background:var(--bg-cell-hover)}
@@ -469,6 +483,11 @@
     .toast-close:hover{background:rgba(255,255,255,.4)}
     .cell.today{background:rgba(26,115,232,.04)}
     .cell.today:hover{background:rgba(26,115,232,.08)}
+
+    /* ── HOLIDAYS ── */
+    .holiday-badge{font-size:9px;font-weight:800;color:var(--orange-main);background:var(--orange-bg);padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;display:inline-block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+    .cell.is-holiday{background:rgba(255,185,81,0.05)}
+    .cell.is-holiday .date-num:not(.today-num){color:var(--orange-main);font-weight:800}
 
     /* ── LIVE SYNC ── */
     @keyframes cellFlash{0%{background:rgba(26,115,232,.18)}100%{background:var(--bg-cell)}}
@@ -695,6 +714,9 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
         <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Status</div><div style="font-size:14px;font-weight:700" id="viewModalStat"></div></div>
         <div id="viewModalProofWrap" style="display:none;grid-column:1/-1"><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Proof / Artifacts</div><div style="font-size:14px;font-weight:500;color:var(--text-main)" id="viewModalProof"></div></div>
       </div>
+    <div id="viewModalHoliday" style="display:none;margin:0 26px 12px;padding:8px 12px;background:var(--orange-bg);color:var(--orange-txt);border-radius:var(--radius-sm);font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px">
+       <span>🎉</span> <span id="viewModalHolidayName"></span>
+    </div>
       <div id="viewModalRemarksBox" style="display:none;background:var(--bg-cell-hover);padding:12px;border-radius:0 8px 8px 8px;border-left:3px solid var(--text-muted)">
         <div style="font-size:10px;font-weight:700;color:var(--text-main);text-transform:uppercase;margin-bottom:4px">Supervisor Remarks</div>
         <div style="font-size:13px;color:var(--text-muted)" id="viewModalRemarks"></div>
@@ -723,10 +745,16 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
 <div class="admin-console" id="adminOv">
   <div class="ac-wrapper">
     <div class="ac-head">
-      <div class="ac-ttl">👑 Admin Command Center <span class="ac-count-badge" id="acPendingBadge">0</span></div>
-      <div style="display:flex;align-items:center;gap:12px">
-        <button class="btn-send-mail" onclick="openSendSummary()"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Send Notifications</button>
-        <button onclick="document.getElementById('adminOv').classList.remove('on')" style="background:white;border:1px solid #dadce0;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px;color:#5f6368;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.1);transition:background .2s">✕</button>
+      <div class="ac-head-top">
+        <div class="ac-ttl">👑 Admin Command Center <span class="ac-count-badge" id="acPendingBadge">0</span></div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn-send-mail" onclick="openSendSummary()"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Send Notifications</button>
+          <button onclick="document.getElementById('adminOv').classList.remove('on')" style="background:white;border:1px solid #dadce0;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px;color:#5f6368;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.1);transition:background .2s">✕</button>
+        </div>
+      </div>
+      <div class="ac-tabs">
+        <div class="ac-tab active" id="tabAcReq" onclick="switchAcTab('requests')">Pending Queue</div>
+        <div class="ac-tab" id="tabAcIns" onclick="switchAcTab('insights')">Insights & Analytics</div>
       </div>
     </div>
     <div id="acStatsBar" style="padding:16px 28px;background:var(--bg-surface);border-bottom:1px solid var(--border-grid);display:flex;gap:24px;"></div>
@@ -907,6 +935,21 @@ let _ctxEventId=null;
 let _ldapFocusIdx=-1;
 
 const reasonEmojis={"Out of Town / Vacation":"✈️","Personal":"👤","Family Gathering":"🏠","Birthday":"🎂"};
+const HOLIDAYS_2026 = {
+  "2026-01-01": "New Year's Day",
+  "2026-01-19": "MLK Jr. Day",
+  "2026-02-16": "Presidents' Day",
+  "2026-04-03": "Good Friday",
+  "2026-05-25": "Memorial Day",
+  "2026-06-19": "Juneteenth",
+  "2026-07-03": "Independence Day (Observed)",
+  "2026-07-04": "Independence Day",
+  "2026-09-07": "Labor Day",
+  "2026-10-12": "Indigenous Peoples' Day",
+  "2026-11-11": "Veterans Day",
+  "2026-11-26": "Thanksgiving Day",
+  "2026-12-25": "Christmas Day"
+};
 const channelColors={"Chat":"ch-chat","Phone":"ch-phone","Email":"ch-email"};
 const wgColors={"Play NA":"wg-na","Play GTV":"wg-gtv","Play HVU":"wg-hvu","Play VIP":"wg-vip"};
 const wgEvClass={"Play NA":"ev-wg-na","Play GTV":"ev-wg-gtv","Play HVU":"ev-wg-hvu","Play VIP":"ev-wg-vip"};
@@ -1534,6 +1577,60 @@ function doAdminAction(newStatus,btnEl,inputId){
 }
 
 /* QoL #6: Admin console scrolls to top + badge */
+function switchAcTab(mode){
+  var tabReq=document.getElementById('tabAcReq'), tabIns=document.getElementById('tabAcIns');
+  var vReq=document.getElementById('acReqView'), vIns=document.getElementById('acInsView');
+  var fBar=document.getElementById('acFilterBar');
+
+  if(mode === 'insights'){
+    tabReq.classList.remove('active'); tabIns.classList.add('active');
+    vReq.style.display='none'; vIns.classList.add('on');
+    fBar.style.display='none';
+    renderInsights();
+  } else {
+    tabReq.classList.add('active'); tabIns.classList.remove('active');
+    vReq.style.display='block'; vIns.classList.remove('on');
+    fBar.style.display='block';
+    renderAdminQueue(true);
+  }
+}
+
+function renderInsights(){
+  // Aggregate data
+  var stats = { types:{}, wgs:{}, agents:{}, reasons:{} };
+  serverEvents.forEach(e => {
+    stats.types[e.channel] = (stats.types[e.channel]||0)+1;
+    stats.wgs[e.workGroup||'N/A'] = (stats.wgs[e.workGroup||'N/A']||0)+1;
+    stats.agents[e.ldap] = (stats.agents[e.ldap]||0)+1;
+    stats.reasons[e.reason] = (stats.reasons[e.reason]||0)+1;
+  });
+
+  const renderBarChart = (data, containerId, limit=8) => {
+    var cont = document.getElementById(containerId);
+    if(!cont) return;
+    var sorted = Object.entries(data).sort((a,b) => b[1]-a[1]).slice(0, limit);
+    var max = Math.max(...sorted.map(x => x[1]), 1);
+    cont.innerHTML = sorted.map(([lbl, val]) => `
+      <div class="c-bar-row">
+        <div class="c-bar-lbl" title="${lbl}">${lbl}</div>
+        <div class="c-bar-track"><div class="c-bar-fill" style="width:0"></div></div>
+        <div class="c-bar-val">${val}</div>
+      </div>
+    `).join('');
+    // Animate bars
+    setTimeout(() => {
+      cont.querySelectorAll('.c-bar-fill').forEach((bar, i) => {
+        bar.style.width = (sorted[i][1]/max*100) + '%';
+      });
+    }, 50);
+  };
+
+  renderBarChart(stats.types, 'chartTypes');
+  renderBarChart(stats.wgs, 'chartWgs');
+  renderBarChart(stats.agents, 'chartAgents');
+  renderBarChart(stats.reasons, 'chartReasons');
+}
+
 function openAdminConsole(){
   acSortCol='date';acSortDir='asc';
   renderAdminQueue();
@@ -1626,7 +1723,7 @@ function renderAdminQueue(skipDropdownRebuild){
     '<th style="text-align:center">Proof</th>'+
     '<th class="sticky-col" style="text-align:right;min-width:360px">Actions &amp; Note</th>'+
     '</tr></thead><tbody>';
-  filtered.forEach(function(e){
+  filtered.forEach(function(e, i){
     var emoji=reasonEmojis[e.reason]||'📅';
     var momaPrimary='https://moma-teams-photos.corp.google.com/photos/'+e.ldap+'?sz=600&type=PLUS';
     var momaFallback='https://moma-teams-photos.corp.google.com/photos/'+e.ldap+'?sz=600&type=SECURITY&type=SILHOUETTE';
@@ -1797,7 +1894,7 @@ function renderUserRequests(){
   if(myEvents.length===0){list.innerHTML='<div class="empty-state"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/></svg><p>No requests found for this month.</p></div>';return}
   var uniqueMyEvents=[],seenCombos=new Set();
   myEvents.forEach(function(e){var k=e.ldap.toLowerCase()+'|'+e.date+'|'+e.channel.toLowerCase();if(!seenCombos.has(k)){seenCombos.add(k);uniqueMyEvents.push(e)}});
-  uniqueMyEvents.forEach(function(e){
+  uniqueMyEvents.forEach(function(e, i){
     var stat=getStatProps(e.status);
     var reasonStr=(e.reason||'').trim();
     var emoji=reasonEmojis[reasonStr]||'📅';
@@ -1890,9 +1987,16 @@ function renderCalendar(){
   for(var day=1;day<=daysInMonth;day++){
     var isToday=(day===today.getDate()&&month===today.getMonth()&&year===today.getFullYear());
     var dateStr=year+'-'+String(month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    var holidayName = HOLIDAYS_2026[dateStr];
     var dayOfWeek=new Date(year,month,day).getDay();
     var wkndClass=(dayOfWeek===0||dayOfWeek===6)?'weekend':'';
-    var html='<div class="cell '+wkndClass+' '+(isToday?'today':'')+'" onclick="openFormForDate(\''+dateStr+'\')" tabindex="0" role="gridcell" aria-label="'+MO_NAMES[month]+' '+day+'">'+'<div class="date-num '+(isToday?'today-num':'')+'">'+ day+'</div>';
+    var holidayClass = holidayName ? 'is-holiday' : '';
+    var staggerDelay = (day % 14) * 0.02;
+    var html='<div class="cell '+wkndClass+' '+holidayClass+' '+(isToday?'today':'')+'" onclick="openFormForDate(\''+dateStr+'\')" tabindex="0" role="gridcell" aria-label="'+MO_NAMES[month]+' '+day+'" style="animation-delay:'+staggerDelay+'s">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;">';
+    html += '<div class="date-num '+(isToday?'today-num':'')+'">'+ day+'</div>';
+    if(holidayName) html += '<div class="holiday-badge" title="'+holidayName+'">'+holidayName+'</div>';
+    html += '</div>';
     var rawDayEvents=serverEvents.filter(function(e){
       var stat=getStatProps(e.status);
       return e.date&&e.date.includes(dateStr)&&activeWGs.includes(e.workGroup)&&activeSites.includes(e.site)&&activeChans.includes(e.channel)&&activeStats.includes(stat.key)&&activeReasons.includes(e.reason)&&e.ldap.toLowerCase().includes(searchQuery)&&(!teamViewActive||e.teamLead===myTeamName);
@@ -2049,6 +2153,16 @@ function openViewModal(ev,targetId){
   var remBox=document.getElementById('viewModalRemarksBox');
   if(e.remarks){document.getElementById('viewModalRemarks').innerText=e.remarks;remBox.style.display='block';remBox.style.borderLeftColor=stat.color}else{remBox.style.display='none'}
   document.getElementById('viewModalTs').innerText=e.timestamp||'Unknown';
+
+  var holidayName = HOLIDAYS_2026[e.date];
+  var holEl = document.getElementById('viewModalHoliday');
+  if(holidayName){
+    document.getElementById('viewModalHolidayName').innerText = holidayName;
+    holEl.style.display = 'flex';
+  } else {
+    holEl.style.display = 'none';
+  }
+
   if(isAdmin){document.getElementById('adminScorecard').innerHTML=generateScorecard(e.date,e.channel,e.site);document.getElementById('adminPanel').style.display='block'}
   else{document.getElementById('adminPanel').style.display='none'}
   var deleteBtn=document.getElementById('btnDeleteRequest');
