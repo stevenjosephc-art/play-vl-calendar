@@ -92,6 +92,7 @@
     .sidebar.collapsed{width:0;padding:0;border:none;overflow:hidden}
     .btn-create{display:flex;align-items:center;justify-content:center;gap:16px;background:var(--blue-bg);border:none;color:var(--blue-txt);padding:0 24px;height:56px;border-radius:16px;font-family:'Google Sans',sans-serif;font-weight:500;font-size:14px;cursor:pointer;box-shadow:var(--shadow-sm);transition:all .2s;margin:8px;flex-shrink:0;position:relative}
     .btn-create:hover:not(:disabled){box-shadow:var(--shadow-md);filter:brightness(0.95)}
+    .btn-create:active:not(:disabled){transform:scale(0.96)}
     .btn-create:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(70%);transform:none!important;box-shadow:none!important}
     .btn-create:focus-visible{outline:none;box-shadow:var(--focus-ring)}
     .btn-create svg{width:24px;height:24px;flex-shrink:0}
@@ -150,7 +151,8 @@
     .shimmer-line{height:16px;border-radius:6px;margin-top:4px;background:linear-gradient(90deg,#f1f3f4 25%,#e8eaed 50%,#f1f3f4 75%);background-size:200% 100%;animation:shimmer 1.5s infinite linear;width:100%}
     .shimmer-line.short{width:70%}
     body.dark-mode .shimmer-num,body.dark-mode .shimmer-line{background:linear-gradient(90deg,#2a2a2a 25%,#3c4043 50%,#2a2a2a 75%);background-size:200% 100%}
-    .cell{background:var(--bg-cell);padding:4px;display:flex;flex-direction:column;gap:2px;transition:all 0.2s ease;cursor:pointer;position:relative;overflow:hidden;min-width:0;min-height:0;border-right:1px solid var(--border-grid);border-bottom:1px solid var(--border-grid)}
+    .cell{background:var(--bg-cell);padding:4px;display:flex;flex-direction:column;gap:2px;transition:all 0.2s ease, transform 0.2s ease;cursor:pointer;position:relative;overflow:hidden;min-width:0;min-height:0;border-right:1px solid var(--border-grid);border-bottom:1px solid var(--border-grid);animation:cellEnter 0.4s ease backwards}
+    @keyframes cellEnter{from{opacity:0;transform:scale(0.96) translateY(4px)}to{opacity:1;transform:scale(1) translateY(0)}}
     .cell:focus-visible{outline:none;background:var(--bg-cell-hover)}
     .cell.inactive{background:var(--bg-cell-inactive);cursor:default;pointer-events:none;opacity:0.5}
     .cell.weekend{background:var(--bg-cell-inactive)}
@@ -290,6 +292,7 @@
 
     /* ── ADMIN BUTTONS ── */
     .ac-act-btn{border:none;padding:8px 16px;border-radius:20px;cursor:pointer;font-family:'Google Sans';font-weight:600;font-size:12px;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;min-width:80px;color:white}
+    .ac-act-btn:active:not(:disabled){transform:scale(0.95)}
     .ac-act-btn:disabled{opacity:.5;cursor:not-allowed}
     .btn-appr{background:var(--green-main)}
     .btn-appr:hover:not(:disabled){filter:brightness(1.1);box-shadow:var(--shadow-md)}
@@ -304,11 +307,16 @@
     .admin-console{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:2500;display:none;justify-content:center;align-items:center;padding:24px 16px;backdrop-filter:blur(4px);animation:fadeIn .3s ease}
     .admin-console.on{display:flex}
     .ac-wrapper{background:var(--bg-page);width:98%;max-width:1400px;border-radius:var(--radius-xl);box-shadow:var(--shadow-float);overflow:hidden;display:flex;flex-direction:column;max-height:94vh;animation:slideUp .4s cubic-bezier(.16,1,.3,1);border:1px solid var(--border-grid)}
-    .ac-head{background:var(--bg-sidebar);padding:16px 28px;border-bottom:1px solid var(--border-grid);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+    .ac-head{background:var(--bg-sidebar);padding:16px 28px 0;border-bottom:1px solid var(--border-grid);display:flex;flex-direction:column;flex-shrink:0}
+    .ac-head-top{display:flex;justify-content:space-between;align-items:center;padding-bottom:16px}
     .ac-ttl{font-family:'Google Sans',sans-serif;font-size:22px;font-weight:400;color:var(--text-title);display:flex;align-items:center;gap:12px}
     .ac-count-badge{background:var(--blue-main);color:white;font-size:12px;font-weight:600;padding:2px 10px;border-radius:12px;font-family:'Google Sans'}
     .ac-close{background:transparent;border:none;width:40px;height:40px;border-radius:50%;color:var(--text-muted);font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
     .ac-close:hover{background:rgba(255,255,255,.9)}
+    .ac-tabs{display:flex;gap:24px}
+    .ac-tab{padding:8px 4px 12px;font-family:'Google Sans';font-size:14px;font-weight:600;color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s}
+    .ac-tab:hover{color:var(--text-main)}
+    .ac-tab.active{color:var(--blue-main);border-bottom-color:var(--blue-main)}
     .ac-filter-bar{padding:12px 28px;background:var(--bg-page);border-bottom:1px solid var(--border-grid);display:flex;flex-wrap:wrap;gap:12px;align-items:center}
     .ac-filter-label{font-size:13px;font-weight:500;color:var(--text-muted);margin-right:4px}
     .ac-filter-bar select{padding:8px 16px;border-radius:20px;border:1px solid var(--border-grid);font-family:'Google Sans';font-size:13px;cursor:pointer;color:var(--text-main);outline:none;background:var(--bg-surface);transition:all .2s}
@@ -757,6 +765,7 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
         <div class="ac-tab" id="tabAcIns" onclick="switchAcTab('insights')">Insights & Analytics</div>
       </div>
     </div>
+    <div id="acFilterBar">
     <div id="acStatsBar" style="padding:16px 28px;background:var(--bg-surface);border-bottom:1px solid var(--border-grid);display:flex;gap:24px;"></div>
     <div class="ac-filter-bar">
       <span class="ac-filter-label">Filter:</span>
@@ -770,7 +779,32 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
         <label class="ac-wg-chip"><input type="checkbox" value="Play VIP" class="ac-wg-filter" checked onchange="renderAdminQueue(true)">Play VIP</label>
       </div>
     </div>
-    <div class="ac-body" id="adminQueueList"></div>
+    </div>
+    <div class="ac-body">
+      <div id="acReqView">
+        <div id="adminQueueList"></div>
+      </div>
+      <div id="acInsView" class="ac-insights">
+        <div class="insight-grid">
+          <div class="insight-card">
+            <div class="ic-title"><span class="material-symbols-outlined" style="color:var(--blue-main)">bar_chart</span>Request Types</div>
+            <div id="chartTypes" class="chart-bar-container"></div>
+          </div>
+          <div class="insight-card">
+            <div class="ic-title"><span class="material-symbols-outlined" style="color:var(--green-main)">group</span>Workgroups</div>
+            <div id="chartWgs" class="chart-bar-container"></div>
+          </div>
+          <div class="insight-card">
+            <div class="ic-title"><span class="material-symbols-outlined" style="color:var(--orange-main)">person</span>Top Requesters</div>
+            <div id="chartAgents" class="chart-bar-container"></div>
+          </div>
+          <div class="insight-card">
+            <div class="ic-title"><span class="material-symbols-outlined" style="color:var(--red-main)">priority_high</span>Reasons Dist.</div>
+            <div id="chartReasons" class="chart-bar-container"></div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div id="acBatchBar" style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--text-main);color:var(--bg-page);padding:12px 24px;border-radius:32px;display:flex;align-items:center;gap:20px;box-shadow:var(--shadow-float);transition:transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);z-index:3000;border:1px solid var(--border-grid)">
       <span id="acBatchCount" style="font-weight:600;font-size:14px;">0 selected</span>
       <div style="height:24px;width:1px;background:rgba(255,255,255,0.2);"></div>
@@ -937,18 +971,25 @@ let _ldapFocusIdx=-1;
 const reasonEmojis={"Out of Town / Vacation":"✈️","Personal":"👤","Family Gathering":"🏠","Birthday":"🎂"};
 const HOLIDAYS_2026 = {
   "2026-01-01": "New Year's Day",
-  "2026-01-19": "MLK Jr. Day",
-  "2026-02-16": "Presidents' Day",
+  "2026-02-17": "Chinese New Year",
+  "2026-03-20": "Eid'l Fitr",
+  "2026-04-02": "Maundy Thursday",
   "2026-04-03": "Good Friday",
-  "2026-05-25": "Memorial Day",
-  "2026-06-19": "Juneteenth",
-  "2026-07-03": "Independence Day (Observed)",
-  "2026-07-04": "Independence Day",
-  "2026-09-07": "Labor Day",
-  "2026-10-12": "Indigenous Peoples' Day",
-  "2026-11-11": "Veterans Day",
-  "2026-11-26": "Thanksgiving Day",
-  "2026-12-25": "Christmas Day"
+  "2026-04-04": "Black Saturday",
+  "2026-04-09": "Day of Valor",
+  "2026-05-01": "Labor Day",
+  "2026-05-27": "Eid'l Adha",
+  "2026-06-12": "Independence Day",
+  "2026-08-21": "Ninoy Aquino Day",
+  "2026-08-31": "National Heroes Day",
+  "2026-11-01": "All Saints' Day",
+  "2026-11-02": "All Souls' Day",
+  "2026-11-30": "Bonifacio Day",
+  "2026-12-08": "Feast of the Immaculate Conception",
+  "2026-12-24": "Christmas Eve",
+  "2026-12-25": "Christmas Day",
+  "2026-12-30": "Rizal Day",
+  "2026-12-31": "Last Day of the Year"
 };
 const channelColors={"Chat":"ch-chat","Phone":"ch-phone","Email":"ch-email"};
 const wgColors={"Play NA":"wg-na","Play GTV":"wg-gtv","Play HVU":"wg-hvu","Play VIP":"wg-vip"};
@@ -1633,7 +1674,7 @@ function renderInsights(){
 
 function openAdminConsole(){
   acSortCol='date';acSortDir='asc';
-  renderAdminQueue();
+  switchAcTab('requests');
   document.getElementById('adminOv').classList.add('on');
   setTimeout(function(){var body=document.getElementById('adminQueueList');if(body)body.scrollTop=0},50);
 }
@@ -1733,7 +1774,8 @@ function renderAdminQueue(skipDropdownRebuild){
     var proofIcon='<span style="color:var(--border-light);font-size:18px">—</span>';
     if(e.proof&&e.proof.startsWith('http'))proofIcon='<a href="'+e.proof+'" target="_blank" style="text-decoration:none;font-size:18px" title="View Artifact">📄</a>';
     var rowCommentId='cmd_comment_'+e.id;
-    html+='<tr data-id="'+e.id+'">';
+    var staggerDelay = Math.min(i * 0.03, 0.6);
+    html+='<tr data-id="'+e.id+'" style="animation-delay:'+staggerDelay+'s">';
     html+='<td style="text-align:center"><input type="checkbox" class="ac-row-check" value="'+e.id+'" onchange="updateBatchUI()" style="width:18px;height:18px;accent-color:var(--blue-main);cursor:pointer"></td>';
     html+='<td style="white-space:nowrap;font-weight:600">'+e.date+'</td>';
     html+='<td><div style="display:flex;align-items:center;gap:8px">'+avatarHtml+'<span style="font-weight:700">'+e.ldap+'</span></div></td>';
@@ -1922,7 +1964,8 @@ function renderUserRequests(){
     }
     actionsHtml += '</div>';
 
-    var html='<div class="req-card '+stat.cls+' '+rsClass+'" onclick="'+cardClick+'">'+
+    var staggerDelay = Math.min(i * 0.05, 1);
+    var html='<div class="req-card '+stat.cls+' '+rsClass+'" onclick="'+cardClick+'" style="animation:rowEnter 0.4s ease '+staggerDelay+'s backwards">'+
       '<div class="req-header">'+
         '<div style="display:flex;align-items:center;gap:12px">'+agentAvatar+
           '<div style="display:flex;flex-direction:column;gap:1px">'+
