@@ -1133,11 +1133,15 @@ function loadDashboard(){
 
 window.addEventListener('load',function(){
   loadTheme();
+  loadSettings();
   setSyncState('idle');
   renderSkeleton();
   LDAP_SHUFFLED=shuffle(LDAPS);
   document.querySelectorAll('input[type="checkbox"]').forEach(function(chk){
-    chk.addEventListener('change',function(){renderCalendar()});
+    chk.addEventListener('change',function(){
+      saveSettings();
+      renderCalendar();
+    });
   });
 
   /* QoL #3: Context menu setup */
@@ -1278,6 +1282,41 @@ function loadTheme() {
     try { if (localStorage.getItem('vl_darkMode') === '1') saved = 'dark'; } catch(e) {}
   }
   applyTheme(saved || 'default');
+}
+
+function saveSettings() {
+  try {
+    const settings = {
+      filters: {
+        channels: Array.from(document.querySelectorAll('.ch-filter')).map(c => ({val: c.value, checked: c.checked})),
+        statuses: Array.from(document.querySelectorAll('.stat-filter')).map(c => ({val: c.value, checked: c.checked})),
+        reasons: Array.from(document.querySelectorAll('.rs-filter')).map(c => ({val: c.value, checked: c.checked})),
+        workgroups: Array.from(document.querySelectorAll('.wg-filter')).map(c => ({val: c.value, checked: c.checked})),
+        sites: Array.from(document.querySelectorAll('.st-filter')).map(c => ({val: c.value, checked: c.checked}))
+      }
+    };
+    localStorage.setItem('vl_settings', JSON.stringify(settings));
+  } catch(e) {}
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem('vl_settings');
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    const apply = (cls, data) => {
+      if (!data) return;
+      document.querySelectorAll(cls).forEach(chk => {
+        const item = data.find(x => x.val === chk.value);
+        if (item) chk.checked = item.checked;
+      });
+    };
+    apply('.ch-filter', s.filters.channels);
+    apply('.stat-filter', s.filters.statuses);
+    apply('.rs-filter', s.filters.reasons);
+    apply('.wg-filter', s.filters.workgroups);
+    apply('.st-filter', s.filters.sites);
+  } catch(e) {}
 }
 
 function buildThemeSwatches() {
@@ -1576,6 +1615,64 @@ function getWSLabel(dateStr){
   return 'WS'+String(sun.getMonth()+1).padStart(2,'0')+String(sun.getDate()).padStart(2,'0');
 }
 
+function getWeekBoundaries(dateStr) {
+  var d = new Date(dateStr + 'T00:00:00');
+  var day = d.getDay();
+  var start = new Date(d);
+  start.setDate(d.getDate() - day);
+  var end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  var pad = (n) => String(n).padStart(2, '0');
+  var fmt = (dt) => dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate());
+  return { start: fmt(start), end: fmt(end) };
+}
+
+function checkCapacity(dateStr, workgroup, channel, site, excludeId) {
+  var groupA = ['Play NA', 'Play GTV'];
+  var groupB = ['Play HVU', 'Play VIP'];
+
+  var relevantEvents = serverEvents.filter(e => {
+    if (e.id === excludeId) return false;
+    var stat = getStatProps(e.status).key;
+    if (stat === 'rejected') return false;
+    return true;
+  });
+
+  var week = getWeekBoundaries(dateStr);
+
+  if (groupA.includes(workgroup)) {
+    var groupAEvents = relevantEvents.filter(e => groupA.includes(e.workGroup));
+
+    if (channel === 'Chat') {
+      // Daily Site Limit
+      var siteGroup = (site === 'CEB') ? 'CEB' : 'VNCC/UBT';
+      var dailyUsed = groupAEvents.filter(e => e.date === dateStr && e.channel === 'Chat' && (siteGroup === 'CEB' ? e.site === 'CEB' : (e.site === 'VNCC' || e.site === 'UBT'))).length;
+      if (dailyUsed >= 1) return { canSubmit: false, message: 'Chat capacity for ' + siteGroup + ' is full for this day (Limit: 1).' };
+
+      // Weekly Total Limit
+      var weeklyUsed = groupAEvents.filter(e => e.date >= week.start && e.date <= week.end && e.channel === 'Chat').length;
+      if (weeklyUsed >= 14) return { canSubmit: false, message: 'Total Chat capacity for the week is full (Limit: 14).' };
+
+    } else if (channel === 'Phone' || channel === 'Email') {
+      // Daily Limit
+      var dailyUsed = groupAEvents.filter(e => e.date === dateStr && e.channel === channel).length;
+      if (dailyUsed >= 1) return { canSubmit: false, message: channel + ' capacity is full for this day (Limit: 1).' };
+
+      // Weekly Limit
+      var weeklyUsed = groupAEvents.filter(e => e.date >= week.start && e.date <= week.end && e.channel === channel).length;
+      if (weeklyUsed >= 3) return { canSubmit: false, message: channel + ' capacity for the week is full (Limit: 3).' };
+    }
+  } else if (groupB.includes(workgroup)) {
+    var groupBEvents = relevantEvents.filter(e => groupB.includes(e.workGroup));
+    // Weekly Total across all channels
+    var weeklyUsed = groupBEvents.filter(e => e.date >= week.start && e.date <= week.end).length;
+    if (weeklyUsed >= 3) return { canSubmit: false, message: 'Play HVU/VIP shared capacity for the week is full (Limit: 3 across all channels).' };
+  }
+
+  return { canSubmit: true };
+}
+
 function generateScorecard(dateStr,channel,site){
   var d=new Date(dateStr+'T00:00:00');
   var day=d.getDay();
@@ -1697,7 +1794,7 @@ function renderInsights(){
     var sorted = entries.slice(0, limit);
     var max = Math.max(...sorted.map(x => x[1]), 1);
     cont.innerHTML = sorted.map(([lbl, val]) => `
-      <div class="c-bar-row">
+      <div class="c-bar-row" style="cursor:pointer" onclick="applyChartFilter('${containerId}', '${lbl}')" title="Click to filter by ${lbl}">
         <div class="c-bar-lbl" title="${lbl}">${lbl}</div>
         <div class="c-bar-track"><div class="c-bar-fill" style="width:0"></div></div>
         <div class="c-bar-val">${val}</div>
@@ -1719,6 +1816,21 @@ function renderInsights(){
   renderBarChart(stats.days, 'chartDays', 7);
   renderBarChart(stats.sites, 'chartSites');
   renderBarChart(stats.statuses, 'chartStats');
+}
+
+function applyChartFilter(chartId, value) {
+  if (chartId === 'chartTypes') document.getElementById('acFilterChan').value = value;
+  else if (chartId === 'chartWeeks') document.getElementById('acFilterWeek').value = value;
+  else if (chartId === 'chartWgs') {
+    document.querySelectorAll('.ac-wg-filter').forEach(chk => {
+      chk.checked = (chk.value === value);
+    });
+  }
+  else return; // only these support easy filtering for now
+
+  showToast('Filtered by ' + value, 'info', 2000);
+  renderAdminQueue(true);
+  renderInsights();
 }
 
 function openAdminConsole(){
@@ -1887,30 +1999,29 @@ function doBatchAction(status){
   bar.style.pointerEvents = 'none';
   bar.style.opacity = '0.7';
 
-  var remaining = selected.length;
-  var errors = 0;
-
-  selected.forEach(uuid => {
-    var ev = serverEvents.find(e => e.id === uuid);
-    if(!ev) { remaining--; return; }
-
-    google.script.run
-      .withSuccessHandler(function(res){
-        remaining--;
-        if(res.success){
-          ev.status = res.newStatus;
-        } else {
-          errors++;
-        }
-        if(remaining === 0) finishBatch(errors, status);
-      })
-      .withFailureHandler(function(){
-        remaining--;
-        errors++;
-        if(remaining === 0) finishBatch(errors, status);
-      })
-      .updateRequestStatus(uuid, ev.status, status, '');
-  });
+  google.script.run
+    .withSuccessHandler(function(res){
+      bar.style.pointerEvents = 'all';
+      bar.style.opacity = '1';
+      if(res.success){
+        // Update local state for all successful items
+        selected.forEach(uuid => {
+          var ev = serverEvents.find(e => e.id === uuid);
+          if(ev) ev.status = status;
+        });
+        showToast('Batch updated ' + res.count + ' requests.', 'success');
+        renderCalendar();
+        renderAdminQueue(true);
+      } else {
+        showToast(res.message, 'error');
+      }
+    })
+    .withFailureHandler(function(err){
+      bar.style.pointerEvents = 'all';
+      bar.style.opacity = '1';
+      showToast('Batch failed: ' + err.message, 'error');
+    })
+    .batchUpdateStatuses(selected, status, '');
 }
 
 function finishBatch(errors, status){
@@ -2093,6 +2204,22 @@ function renderCalendar(){
     html += '<div class="date-num '+(isToday?'today-num':'')+'">'+ day+'</div>';
     if(holidayName) html += '<div class="holiday-badge" title="'+holidayName+'">'+holidayName+'</div>';
     html += '</div>';
+
+    // Capacity Indicators (Group A focus)
+    var groupA = ['Play NA', 'Play GTV'];
+    var gAEvents = serverEvents.filter(e => groupA.includes(e.workGroup) && e.date === dateStr && getStatProps(e.status).key !== 'rejected');
+    var chatCeb = gAEvents.filter(e => e.channel === 'Chat' && e.site === 'CEB').length;
+    var chatOther = gAEvents.filter(e => e.channel === 'Chat' && (e.site === 'VNCC' || e.site === 'UBT')).length;
+    var phone = gAEvents.filter(e => e.channel === 'Phone').length;
+
+    if (chatCeb > 0 || chatOther > 0 || phone > 0) {
+      html += '<div style="display:flex;flex-wrap:wrap;gap:2px;margin:2px 4px 4px;opacity:0.8">';
+      if(chatCeb > 0) html += '<span style="font-size:8px;font-weight:700;padding:1px 3px;background:var(--green-bg);color:var(--green-main);border-radius:2px">C:CEB '+chatCeb+'/1</span>';
+      if(chatOther > 0) html += '<span style="font-size:8px;font-weight:700;padding:1px 3px;background:var(--green-bg);color:var(--green-main);border-radius:2px">C:OTH '+chatOther+'/1</span>';
+      if(phone > 0) html += '<span style="font-size:8px;font-weight:700;padding:1px 3px;background:var(--blue-bg);color:var(--blue-main);border-radius:2px">P '+phone+'/1</span>';
+      html += '</div>';
+    }
+
     var rawDayEvents=serverEvents.filter(function(e){
       var stat=getStatProps(e.status);
       return e.date&&e.date.includes(dateStr)&&activeWGs.includes(e.workGroup)&&activeSites.includes(e.site)&&activeChans.includes(e.channel)&&activeStats.includes(stat.key)&&activeReasons.includes(e.reason)&&e.ldap.toLowerCase().includes(searchQuery)&&(!teamViewActive||e.teamLead===myTeamName);
@@ -2434,6 +2561,11 @@ function clientValidate(d){
   }
   var isDuplicate=serverEvents.some(function(e){return e.ldap.toLowerCase()===d.ldap.toLowerCase()&&e.channel.toLowerCase()===d.channel.toLowerCase()&&e.date===d.vlDate});
   if(isDuplicate)return'Duplicate Entry: You already have a '+d.channel+' request for '+d.vlDate+'.';
+
+  // Capacity Check
+  var cap = checkCapacity(d.vlDate, d.workGroup, d.channel, d.site);
+  if (!cap.canSubmit) return cap.message;
+
   return null;
 }
 

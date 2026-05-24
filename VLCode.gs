@@ -367,6 +367,61 @@ function updateRequestStatus(eventUuid, oldStatus, newStatus, adminComment) {
   }
 }
 
+// ── BATCH STATUS UPDATE (optimized for multiple rows) ──
+function batchUpdateStatuses(eventUuuids, newStatus, adminComment) {
+  var actor = getSessionEmail();
+  if (!Array.isArray(eventUuuids) || eventUuuids.length === 0) {
+    return { success: false, message: "No requests selected." };
+  }
+
+  // Rate limit: batch counts as one action for basic quota, but we log the size
+  if (!_checkRateLimit("batchUpdate_" + actor, 10, 60)) {
+    return { success: false, message: "Rate limit exceeded. Please wait a moment." };
+  }
+
+  try {
+    var sheet   = getVLSheet();
+    var rowIdx  = _getRowIndex(sheet);
+    var tz      = Session.getScriptTimeZone();
+    var stamp   = actor.split('@')[0] + " — " + Utilities.formatDate(new Date(), tz, "MM/dd/yy HH:mm") + " (Batch)";
+
+    var statusColIdx  = ensureColumn(sheet, "Status") + 1;
+    var confColIdx    = ensureColumn(sheet, "Confirmation on Status") + 1;
+    var commentColIdx = ensureColumn(sheet, "Comments") + 1;
+
+    var updatedCount = 0;
+    var errors = [];
+
+    // Note: To be truly high-performance on very large sets, we'd use setValues() on the whole range,
+    // but for typical batch sizes (10-50), individual row updates with indexed lookup are safe and
+    // easier to manage with concurrency logic.
+    eventUuuids.forEach(function(uuid) {
+      var rowNum = rowIdx.index[uuid];
+      if (!rowNum) {
+        errors.push(uuid + " not found");
+        return;
+      }
+
+      sheet.getRange(rowNum, statusColIdx).setValue(newStatus);
+      sheet.getRange(rowNum, confColIdx).setValue(stamp);
+      if (adminComment && adminComment.trim()) {
+        sheet.getRange(rowNum, commentColIdx).setValue(adminComment.trim());
+      }
+      updatedCount++;
+    });
+
+    _log("INFO", "batchUpdateStatuses", "Batch update complete", {
+      count: updatedCount, to: newStatus, errorCount: errors.length
+    });
+
+    return { success: true, count: updatedCount, errors: errors };
+
+  } catch(e) {
+    _log("ERROR", "batchUpdateStatuses", e.message);
+    return { success: false, message: e.message };
+  }
+}
+
 // ── FORM SUBMISSION (rate-limited, logged) ────────────
 function processVLForm(data) {
   var actor = getSessionEmail();
