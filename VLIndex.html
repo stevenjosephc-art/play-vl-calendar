@@ -1648,7 +1648,7 @@ function switchAcTab(mode){
     tabReq.classList.add('active'); tabIns.classList.remove('active');
     vReq.style.display='block'; vIns.classList.remove('on');
     fBar.style.display='block';
-    renderAdminQueue(true);
+    renderAdminQueue(); // Populate dropdowns when opening/switching to queue
   }
 }
 
@@ -1723,8 +1723,8 @@ function renderInsights(){
 
 function openAdminConsole(){
   acSortCol='date';acSortDir='asc';
-  switchAcTab('requests');
   document.getElementById('adminOv').classList.add('on');
+  switchAcTab('requests');
   setTimeout(function(){var body=document.getElementById('adminQueueList');if(body)body.scrollTop=0},50);
 }
 
