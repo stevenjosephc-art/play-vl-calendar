@@ -367,6 +367,73 @@ function updateRequestStatus(eventUuid, oldStatus, newStatus, adminComment) {
   }
 }
 
+// ── BATCH STATUS UPDATE (optimized for multiple rows) ──
+function batchUpdateStatuses(eventUuuids, newStatus, adminComment) {
+  var actor = getSessionEmail();
+  if (!Array.isArray(eventUuuids) || eventUuuids.length === 0) {
+    return { success: false, message: "No requests selected." };
+  }
+
+  // Rate limit: batch counts as one action for basic quota, but we log the size
+  if (!_checkRateLimit("batchUpdate_" + actor, 10, 60)) {
+    return { success: false, message: "Rate limit exceeded. Please wait a moment." };
+  }
+
+  try {
+    var sheet   = getVLSheet();
+    var rowIdx  = _getRowIndex(sheet);
+    var tz      = Session.getScriptTimeZone();
+    var stamp   = actor.split('@')[0] + " — " + Utilities.formatDate(new Date(), tz, "MM/dd/yy HH:mm") + " (Batch)";
+
+    var statusColIdx  = ensureColumn(sheet, "Status") + 1;
+    var confColIdx    = ensureColumn(sheet, "Confirmation on Status") + 1;
+    var commentColIdx = ensureColumn(sheet, "Comments") + 1;
+
+    var updatedCount = 0;
+    var errors = [];
+
+    // Optimized: group updates to minimize sheet API calls
+    var minRow = 999999, maxRow = 0;
+    eventUuuids.forEach(function(uuid){
+      var r = rowIdx.index[uuid];
+      if(r){ if(r < minRow) minRow = r; if(r > maxRow) maxRow = r; }
+    });
+
+    if (maxRow > 0) {
+      var numRows = maxRow - minRow + 1;
+      var lastCol = sheet.getLastColumn();
+      var range = sheet.getRange(minRow, 1, numRows, lastCol);
+      var values = range.getValues();
+
+      eventUuuids.forEach(function(uuid) {
+        var rowNum = rowIdx.index[uuid];
+        if (rowNum) {
+          var localIdx = rowNum - minRow;
+          values[localIdx][statusColIdx - 1] = newStatus;
+          values[localIdx][confColIdx - 1]   = stamp;
+          if (adminComment && adminComment.trim()) {
+            values[localIdx][commentColIdx - 1] = adminComment.trim();
+          }
+          updatedCount++;
+        } else {
+          errors.push(uuid + " not found");
+        }
+      });
+      range.setValues(values);
+    }
+
+    _log("INFO", "batchUpdateStatuses", "Batch update complete", {
+      count: updatedCount, to: newStatus, errorCount: errors.length
+    });
+
+    return { success: true, count: updatedCount, errors: errors };
+
+  } catch(e) {
+    _log("ERROR", "batchUpdateStatuses", e.message);
+    return { success: false, message: e.message };
+  }
+}
+
 // ── FORM SUBMISSION (rate-limited, logged) ────────────
 function processVLForm(data) {
   var actor = getSessionEmail();
@@ -668,38 +735,7 @@ function sendNazunaNotifications() {
   }
 }
 
-function createEmailTemplate(ldap, date, status, queue, team, reason, workgroup, comments, timestamp, emoji, accruals, attendance, site, confirmation) {
-  var statusColor = "#5f6368";
-  var lowerStatus = status.toString().toLowerCase();
-  if      (lowerStatus.includes("birthday")) statusColor = "#1a73e8";
-  else if (lowerStatus.includes("approved")) statusColor = "#188038";
-  else if (lowerStatus.includes("denied"))   statusColor = "#d93025";
-  else if (lowerStatus.includes("no alloc")) statusColor = "#ea4335";
-  return '<div style="font-family:\'Google Sans\',Roboto,Arial,sans-serif;max-width:600px;border:1px solid #dadce0;border-radius:8px;overflow:hidden;margin:0 auto;background:#ffffff;">' +
-    '<table style="width:100%;border-collapse:collapse;height:6px;"><tr>' +
-    '<td style="background:#4285F4;width:25%;height:6px;"></td><td style="background:#EA4335;width:25%;height:6px;"></td>' +
-    '<td style="background:#FBBC05;width:25%;height:6px;"></td><td style="background:#34A853;width:25%;height:6px;"></td>' +
-    '</tr></table>' +
-    '<div style="padding:30px 20px 10px;text-align:center;"><h2 style="color:' + statusColor + ';margin:0;font-size:32px;font-weight:400;">' + emoji + ' ' + status + '</h2></div>' +
-    '<div style="padding:20px 30px;">' +
-    '<p style="color:#202124;font-size:16px;margin-bottom:20px;">Hi <strong>' + ldap + '</strong>,</p>' +
-    '<p style="color:#5f6368;font-size:14px;">Here is the latest update regarding your leave request.</p>' +
-    '<table style="width:100%;border-collapse:collapse;margin-top:25px;font-size:14px;">' +
-    '<tr style="border-bottom:1px solid #f1f3f4;"><td style="padding:14px 0;color:#5f6368;">VL Date</td><td style="padding:14px 0;text-align:right;color:#202124;font-weight:500;font-size:16px;">' + date + '</td></tr>' +
-    '<tr style="border-bottom:1px solid #f1f3f4;"><td style="padding:14px 0;color:#5f6368;">Status</td><td style="padding:14px 0;text-align:right;color:' + statusColor + ';font-weight:bold;">' + status + '</td></tr>' +
-    '<tr style="border-bottom:1px solid #f1f3f4;"><td style="padding:14px 0;color:#5f6368;">Site</td><td style="padding:14px 0;text-align:right;color:#202124;">' + (site||"-") + '</td></tr>' +
-    '<tr style="border-bottom:1px solid #f1f3f4;"><td style="padding:14px 0;color:#5f6368;">Attendance</td><td style="padding:14px 0;text-align:right;color:#188038;font-weight:600;">' + (attendance||"-") + '</td></tr>' +
-    '<tr style="border-bottom:1px solid #f1f3f4;"><td style="padding:14px 0;color:#5f6368;">Accruals</td><td style="padding:14px 0;text-align:right;color:#202124;">' + (accruals||"-") + '</td></tr>' +
-    '<tr style="border-bottom:1px solid #f1f3f4;"><td style="padding:14px 0;color:#5f6368;">Workgroup</td><td style="padding:14px 0;text-align:right;color:#1a73e8;font-weight:600;">' + workgroup + '</td></tr>' +
-    '<tr style="border-bottom:1px solid #f1f3f4;"><td style="padding:14px 0;color:#5f6368;">Comments</td><td style="padding:14px 0;text-align:right;color:#202124;">' + (comments||"-") + '</td></tr>' +
-    '<tr style="border-bottom:1px solid #f1f3f4;"><td style="padding:14px 0;color:#5f6368;">Confirmation</td><td style="padding:14px 0;text-align:right;color:#202124;font-size:11px;">' + (confirmation||"-") + '</td></tr>' +
-    '</table>' +
-    '<div style="background:#f8f9fa;padding:15px;border-radius:8px;font-size:12px;color:#5f6368;border:1px solid #f1f3f4;margin-top:16px;">' +
-    '<strong>Request Details:</strong><br>Submitted: ' + timestamp + '<br>Reason: ' + reason + '<br>Team: ' + team + '</div>' +
-    '<hr style="border:0;height:1px;background:#dadce0;margin:25px 0;">' +
-    '<p style="font-size:11px;color:#d93025;text-align:center;font-weight:500;">Automated message from Google Play VL Calendar.</p>' +
-    '</div></div>';
-}
+// createEmailTemplate removed from VLCode.gs (using version in Leave Confirmation Email.gs)
 
 function getUserAvatarUrl() { return null; }
 

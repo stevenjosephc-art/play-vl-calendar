@@ -582,102 +582,78 @@ function removeTriggers(silent) {
  * ------------------------------------------------------------------
  */
 function createEmailTemplate(ldap, date, status, queue, team, reason, workgroup, comments, timestamp, emoji, accruals, attendance, site, confirmation) {
+  var statusColor = "#5f6368";
+  var statusBg = "#f1f3f4";
+  var lowerStatus = status.toString().toLowerCase();
 
-  let statusColor   = "#5f6368";
-  const lowerStatus = status.toString().toLowerCase();
+  if (lowerStatus.includes("birthday")) { statusColor = "#673ab7"; statusBg = "#f3e5f5"; }
+  else if (lowerStatus.includes("approved")) { statusColor = "#137333"; statusBg = "#e6f4ea"; }
+  else if (lowerStatus.includes("denied")) { statusColor = "#d93025"; statusBg = "#fce8e6"; }
+  else if (lowerStatus.includes("no alloc")) { statusColor = "#b06000"; statusBg = "#fef7e0"; }
 
-  if      (lowerStatus.includes("birthday leave"))      statusColor = "#1a73e8";
-  else if (lowerStatus.includes("approved"))             statusColor = "#188038";
-  else if (lowerStatus.includes("denied"))               statusColor = "#d93025";
-  else if (lowerStatus.includes("no allocation"))        statusColor = "#ea4335";
-  else if (lowerStatus.includes("pending allocation"))   statusColor = "#fbbc04";
-  else if (lowerStatus.includes("no accruals"))          statusColor = "#e37400";
-  else if (lowerStatus.includes("emergency leave"))      statusColor = "#a142f4";
-  else if (lowerStatus.includes("support"))              statusColor = "#5f6368";
-  else if (lowerStatus.includes("not in roster"))        statusColor = "#c5221f";
-  else if (lowerStatus.includes("wrong date"))           statusColor = "#c5221f";
-  else if (lowerStatus.includes("duplicate"))            statusColor = "#e37400";
+  var dashboardLink = "";
+  try {
+    dashboardLink = ScriptApp.getService().getUrl();
+  } catch (e) {
+    // Fallback to CONFIG link if ScriptApp fails (e.g. not running as web app yet)
+    dashboardLink = (typeof CONFIG !== 'undefined' && CONFIG.DASHBOARD_LINK) ? CONFIG.DASHBOARD_LINK : "#";
+  }
 
   return `
-    <div style="font-family: 'Google Sans', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; border: 1px solid #dadce0; border-radius: 8px; overflow: hidden; margin: 0 auto; background-color: #ffffff;">
-      
-      <table style="width: 100%; border-collapse: collapse; height: 6px;">
-        <tr>
-          <td style="background-color: #4285F4; width: 25%; height: 6px;"></td>
-          <td style="background-color: #EA4335; width: 25%; height: 6px;"></td>
-          <td style="background-color: #FBBC05; width: 25%; height: 6px;"></td>
-          <td style="background-color: #34A853; width: 25%; height: 6px;"></td>
-        </tr>
-      </table>
-
-      <div style="padding: 30px 20px 10px 20px; text-align: center;">
-        <h2 style="color: ${statusColor}; margin: 0; font-size: 32px; font-weight: 400; letter-spacing: -0.5px;">
-          <span style="vertical-align: middle;">${emoji}</span> 
-          <span style="vertical-align: middle;">${status}</span>
-        </h2>
+    <div style="font-family: 'Google Sans', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+      <!-- Brand Header -->
+      <div style="background-color: #f8f9fa; padding: 24px; border-bottom: 1px solid #f1f3f4; display: flex; align-items: center; gap: 12px;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg" width="32" height="32" style="display:block">
+        <span style="font-size: 20px; font-weight: 500; color: #3c4043; font-family: 'Google Sans Display', sans-serif;">Play VL Calendar</span>
       </div>
 
-      <div style="padding: 20px 30px;">
-        <p style="color: #202124; font-size: 16px; margin-bottom: 20px;">Hi <strong>${ldap}</strong>,</p>
-        <p style="color: #5f6368; font-size: 14px;">Here is the latest update regarding your leave request.</p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-top: 25px; font-size: 14px;">
-          <tr style="border-bottom: 1px solid #f1f3f4;">
-            <td style="padding: 14px 0; color: #5f6368;">VL Date</td>
-            <td style="padding: 14px 0; text-align: right; color: #202124; font-weight: 500; font-size: 16px;">${date}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #f1f3f4;">
-            <td style="padding: 14px 0; color: #5f6368;">Status</td>
-            <td style="padding: 14px 0; text-align: right; color: ${statusColor}; font-weight: bold;">${status}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #f1f3f4;">
-            <td style="padding: 14px 0; color: #5f6368;">Site</td>
-            <td style="padding: 14px 0; text-align: right; color: #202124;">${site || "-"}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #f1f3f4;">
-            <td style="padding: 14px 0; color: #5f6368;">Queue/Slot</td>
-            <td style="padding: 14px 0; text-align: right; color: #202124;">${queue}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #f1f3f4;">
-            <td style="padding: 14px 0; color: #5f6368;">Current Attendance</td>
-            <td style="padding: 14px 0; text-align: right; color: #188038; font-weight: 600;">${attendance || "-"}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #f1f3f4;">
-            <td style="padding: 14px 0; color: #5f6368;">VL Accruals</td>
-            <td style="padding: 14px 0; text-align: right; color: #202124;">${accruals || "-"}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #f1f3f4;">
-            <td style="padding: 14px 0; color: #5f6368;">Workgroup</td>
-            <td style="padding: 14px 0; text-align: right; color: #1a73e8; font-weight: 600;">${workgroup}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #f1f3f4;">
-            <td style="padding: 14px 0; color: #5f6368;">Comments</td>
-            <td style="padding: 14px 0; text-align: right; color: #202124;">${comments || "-"}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #f1f3f4;">
-            <td style="padding: 14px 0; color: #5f6368;">Confirmation</td>
-            <td style="padding: 14px 0; text-align: right; color: #202124;">${confirmation || "-"}</td>
-          </tr>
-        </table>
+      <!-- Status Banner -->
+      <div style="padding: 40px 32px 32px; text-align: center;">
+        <div style="display: inline-block; padding: 8px 16px; background-color: ${statusBg}; border-radius: 100px; margin-bottom: 16px;">
+          <span style="font-size: 14px; font-weight: 700; color: ${statusColor}; text-transform: uppercase; letter-spacing: 0.8px;">${status}</span>
+        </div>
+        <h1 style="font-size: 36px; font-weight: 400; color: #202124; margin: 0; letter-spacing: -0.5px;">${emoji} Update for ${ldap}</h1>
+        <p style="font-size: 16px; color: #5f6368; margin-top: 12px;">Your leave request for <strong>${date}</strong> has been reviewed.</p>
+      </div>
 
-        <br>
-        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 12px; color: #5f6368; border: 1px solid #f1f3f4;">
-          <strong>Request Details:</strong><br>
-          <span style="display:inline-block; margin-top: 6px;">Submitted: ${timestamp}</span><br>
-          <span style="display:inline-block; margin-top: 4px;">Reason: ${reason}</span><br>
-          <span style="display:inline-block; margin-top: 4px;">Team: ${team}</span>
+      <!-- Details Card -->
+      <div style="padding: 0 32px 32px;">
+        <div style="background-color: #f8f9fa; border-radius: 12px; padding: 24px; border: 1px solid #f1f3f4;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; font-size: 12px; font-weight: 700; color: #70757a; text-transform: uppercase; letter-spacing: 0.5px; width: 40%;">VL Date</td>
+              <td style="padding: 8px 0; font-size: 15px; font-weight: 500; color: #202124; text-align: right;">${date}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-size: 12px; font-weight: 700; color: #70757a; text-transform: uppercase; letter-spacing: 0.5px;">Site / Channel</td>
+              <td style="padding: 8px 0; font-size: 15px; font-weight: 500; color: #202124; text-align: right;">${site || "N/A"} • ${workgroup}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-size: 12px; font-weight: 700; color: #70757a; text-transform: uppercase; letter-spacing: 0.5px;">Accruals</td>
+              <td style="padding: 8px 0; font-size: 15px; font-weight: 500; color: #202124; text-align: right;">${accruals || "0"} credits</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-size: 12px; font-weight: 700; color: #70757a; text-transform: uppercase; letter-spacing: 0.5px;">Attendance</td>
+              <td style="padding: 8px 0; font-size: 15px; font-weight: 500; color: #1e8e3e; text-align: right;">${attendance || "N/A"}</td>
+            </tr>
+            <tr><td colspan="2" style="padding: 16px 0;"><div style="height: 1px; background-color: #dadce0;"></div></td></tr>
+            <tr>
+              <td style="padding: 8px 0; font-size: 12px; font-weight: 700; color: #70757a; text-transform: uppercase; letter-spacing: 0.5px;">Supervisor Note</td>
+              <td style="padding: 8px 0; font-size: 14px; font-style: italic; color: #3c4043; text-align: right;">"${comments || "No additional comments"}"</td>
+            </tr>
+          </table>
         </div>
 
-        <br>
-        <div style="text-align: center; margin: 30px 0;">
-           <a href="${CONFIG.DASHBOARD_LINK}" style="background-color: #1a73e8; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-size: 14px; font-weight: 500; display: inline-block; box-shadow: 0 1px 2px rgba(60,64,67,0.3);">View Leave Dashboard</a>
+        <!-- Action Button -->
+        <div style="text-align: center; margin-top: 32px;">
+          <a href="${dashboardLink}" style="background-color: #1a73e8; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 24px; font-size: 14px; font-weight: 500; display: inline-block; box-shadow: 0 2px 4px rgba(26,115,232,0.25);">Open Calendar Dashboard</a>
         </div>
+      </div>
 
-        <hr style="border: 0; height: 1px; background: #dadce0; margin: 25px 0;">
-        
-        <p style="font-size: 11px; color: #d93025; text-align: center; font-weight: 500;">
-          This is an automated message from Project Exodus (gUP Play Ops).
-        </p>
+      <!-- Footer Info -->
+      <div style="padding: 24px 32px; background-color: #f8f9fa; border-top: 1px solid #f1f3f4; text-align: center;">
+        <p style="font-size: 11px; color: #70757a; margin: 0 0 8px;">Submitted on ${timestamp} • Reason: ${reason}</p>
+        <p style="font-size: 11px; color: #bdc1c6; margin: 0;">This is an automated notification from Project Exodus (gUP Play Ops). Ref: ${confirmation || "N/A"}</p>
       </div>
     </div>
   `;
