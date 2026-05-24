@@ -802,6 +802,22 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
             <div class="ic-title"><span class="material-symbols-outlined" style="color:var(--red-main)">priority_high</span>Reasons Dist.</div>
             <div id="chartReasons" class="chart-bar-container"></div>
           </div>
+          <div class="insight-card">
+            <div class="ic-title"><span class="material-symbols-outlined" style="color:var(--purple-main)">calendar_view_week</span>Weekly Volume</div>
+            <div id="chartWeeks" class="chart-bar-container"></div>
+          </div>
+          <div class="insight-card">
+            <div class="ic-title"><span class="material-symbols-outlined" style="color:var(--yellow-main)">today</span>Day of Week</div>
+            <div id="chartDays" class="chart-bar-container"></div>
+          </div>
+          <div class="insight-card">
+            <div class="ic-title"><span class="material-symbols-outlined" style="color:var(--blue-main)">location_on</span>Site Dist.</div>
+            <div id="chartSites" class="chart-bar-container"></div>
+          </div>
+          <div class="insight-card">
+            <div class="ic-title"><span class="material-symbols-outlined" style="color:var(--green-main)">fact_check</span>Status Efficiency</div>
+            <div id="chartStats" class="chart-bar-container"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1626,7 +1642,7 @@ function switchAcTab(mode){
   if(mode === 'insights'){
     tabReq.classList.remove('active'); tabIns.classList.add('active');
     vReq.style.display='none'; vIns.classList.add('on');
-    fBar.style.display='none';
+    fBar.style.display='block';
     renderInsights();
   } else {
     tabReq.classList.add('active'); tabIns.classList.remove('active');
@@ -1637,19 +1653,48 @@ function switchAcTab(mode){
 }
 
 function renderInsights(){
+  // Apply current filters to all events for analytics
+  var chanFilter = document.getElementById('acFilterChan').value;
+  var weekFilter = document.getElementById('acFilterWeek').value;
+  var dateFilter = document.getElementById('acFilterDate').value;
+  var wgFilter = Array.from(document.querySelectorAll('.ac-wg-filter:checked')).map(el => el.value);
+
+  var filtered = serverEvents.filter(e => {
+    if(chanFilter !== 'All' && e.channel !== chanFilter) return false;
+    if(wgFilter.length > 0 && !wgFilter.includes(e.workGroup)) return false;
+    if(weekFilter !== 'All' && getWSLabel(e.date) !== weekFilter) return false;
+    if(dateFilter !== 'All' && e.date !== dateFilter) return false;
+    return true;
+  });
+
   // Aggregate data
-  var stats = { types:{}, wgs:{}, agents:{}, reasons:{} };
-  serverEvents.forEach(e => {
+  var stats = { types:{}, wgs:{}, agents:{}, reasons:{}, weeks:{}, days:{}, sites:{}, statuses:{} };
+  var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  filtered.forEach(e => {
     stats.types[e.channel] = (stats.types[e.channel]||0)+1;
     stats.wgs[e.workGroup||'N/A'] = (stats.wgs[e.workGroup||'N/A']||0)+1;
     stats.agents[e.ldap] = (stats.agents[e.ldap]||0)+1;
     stats.reasons[e.reason] = (stats.reasons[e.reason]||0)+1;
+
+    var wk = getWSLabel(e.date);
+    stats.weeks[wk] = (stats.weeks[wk]||0)+1;
+
+    var d = new Date(e.date + 'T00:00:00').getDay();
+    stats.days[dayNames[d]] = (stats.days[dayNames[d]]||0)+1;
+
+    stats.sites[e.site||'Unknown'] = (stats.sites[e.site||'Unknown']||0)+1;
+    stats.statuses[e.status||'Pending'] = (stats.statuses[e.status||'Pending']||0)+1;
   });
 
-  const renderBarChart = (data, containerId, limit=8) => {
+  const renderBarChart = (data, containerId, limit=8, sortByKey=false) => {
     var cont = document.getElementById(containerId);
     if(!cont) return;
-    var sorted = Object.entries(data).sort((a,b) => b[1]-a[1]).slice(0, limit);
+    var entries = Object.entries(data);
+    if(sortByKey) entries.sort((a,b) => a[0].localeCompare(b[0]));
+    else entries.sort((a,b) => b[1]-a[1]);
+
+    var sorted = entries.slice(0, limit);
     var max = Math.max(...sorted.map(x => x[1]), 1);
     cont.innerHTML = sorted.map(([lbl, val]) => `
       <div class="c-bar-row">
@@ -1670,6 +1715,10 @@ function renderInsights(){
   renderBarChart(stats.wgs, 'chartWgs');
   renderBarChart(stats.agents, 'chartAgents');
   renderBarChart(stats.reasons, 'chartReasons');
+  renderBarChart(stats.weeks, 'chartWeeks', 6, true);
+  renderBarChart(stats.days, 'chartDays', 7);
+  renderBarChart(stats.sites, 'chartSites');
+  renderBarChart(stats.statuses, 'chartStats');
 }
 
 function openAdminConsole(){
@@ -1696,6 +1745,10 @@ function renderAdminQueue(skipDropdownRebuild){
   // Quick Stats
   var badge=document.getElementById('acPendingBadge');
   if(badge)badge.textContent=pending.length;
+
+  if (document.getElementById('acInsView').classList.contains('on')) {
+    renderInsights();
+  }
 
   var statsBar = document.getElementById('acStatsBar');
   if(statsBar) {
