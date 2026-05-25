@@ -196,10 +196,11 @@
     .event-more:hover{background:var(--blue-main);color:white;box-shadow:var(--shadow-sm)}
 
     /* ── POPOVER ── */
-    .popover{position:fixed;background:var(--bg-surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-float);width:auto;min-width:320px;z-index:10000;pointer-events:none;display:none;flex-direction:column;color:var(--text-main);transition:all 0.2s cubic-bezier(0, 0, 0.2, 1);opacity:0;transform:scale(0.95);overflow:visible;border:1px solid var(--border-grid)}
-    .popover.on{display:flex;opacity:1;transform:scale(1)}
-    .popover::before{content:'';position:absolute;top:-6px;left:24px;width:12px;height:12px;background:inherit;border-top:1px solid var(--border-grid);border-left:1px solid var(--border-grid);transform:rotate(45deg)}
-    .popover.caret-right::before{left:auto;right:20px}
+    .popover{position:fixed;background:var(--bg-surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-float);width:320px;z-index:10000;pointer-events:none;display:none;flex-direction:column;color:var(--text-main);transition:opacity 0.2s, transform 0.2s;opacity:0;transform:translateY(10px);overflow:visible;border:1px solid var(--border-grid)}
+    .popover.on{display:flex;opacity:1;transform:translateY(0)}
+    .popover-caret{position:absolute;width:12px;height:12px;background:inherit;transform:rotate(45deg);border:1px solid var(--border-grid);z-index:-1}
+    .popover.pos-bottom .popover-caret{top:-7px;border-bottom:none;border-right:none}
+    .popover.pos-top .popover-caret{bottom:-7px;border-top:none;border-left:none}
     .po-banner{padding:10px 16px;background:var(--pop-bg,var(--neutral-bg));color:var(--pop-txt,var(--neutral-txt));border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;border-radius:12px 12px 0 0}
     .po-banner svg{width:14px;height:14px;fill:currentColor}
     .po-header{padding:14px 16px 10px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border-light)}
@@ -715,6 +716,7 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
 </div>
 
 <div class="popover" id="eventPopover">
+  <div id="popoverCaret" class="popover-caret"></div>
   <div class="po-banner" id="poBanner"><span id="poStatIcon"></span> <span id="poStatTxt"></span></div>
   <div class="po-header">
     <div id="poAvatarWrap" style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--border-grid);display:flex;align-items:center;justify-content:center;font-weight:bold;color:var(--text-muted);font-size:16px"></div>
@@ -1012,6 +1014,7 @@ let _currentViewEvent=null;
 let acSortCol='date';
 let acSortDir='asc';
 let _ctxEventId=null;
+let poTimer=null;
 // QoL #1: LDAP dropdown keyboard nav state
 let _ldapFocusIdx=-1;
 
@@ -2321,41 +2324,21 @@ function showDayOverflow(ev,dateStr){
     holRow.style.display = 'none';
   }
 
-  // Capacity Summary for Drawer
-  var groupA = ['Play NA', 'Play GTV'];
-  var gAEvents = serverEvents.filter(e => groupA.includes(e.workGroup) && e.date === dateStr && getStatProps(e.status).key !== 'rejected');
-  var cCeb = gAEvents.filter(e => e.channel === 'Chat' && e.site === 'CEB').length;
-  var cOth = gAEvents.filter(e => e.channel === 'Chat' && (e.site === 'VNCC' || e.site === 'UBT')).length;
-  var pPh = gAEvents.filter(e => e.channel === 'Phone').length;
-  var pEm = gAEvents.filter(e => e.channel === 'Email').length;
-
-  var capHtml = '<div class="sd-cap-box"><div class="sd-cap-title">Daily Capacity (Group A)</div><div class="sd-cap-grid">'+
-    '<div class="sd-cap-item"><span class="sd-cap-lbl">Chat CEB</span><span class="sd-cap-val"><span class="sd-cap-dot" style="background:'+(cCeb>=1?'var(--red-main)':'var(--green-main)')+'"></span>'+cCeb+'/1</span></div>'+
-    '<div class="sd-cap-item"><span class="sd-cap-lbl">Chat Other</span><span class="sd-cap-val"><span class="sd-cap-dot" style="background:'+(cOth>=1?'var(--red-main)':'var(--green-main)')+'"></span>'+cOth+'/1</span></div>'+
-    '<div class="sd-cap-item"><span class="sd-cap-lbl">Phone</span><span class="sd-cap-val"><span class="sd-cap-dot" style="background:'+(pPh>=1?'var(--red-main)':'var(--blue-main)')+'"></span>'+pPh+'/1</span></div>'+
-    '<div class="sd-cap-item"><span class="sd-cap-lbl">Email</span><span class="sd-cap-val"><span class="sd-cap-dot" style="background:'+(pEm>=1?'var(--red-main)':'var(--orange-main)')+'"></span>'+pEm+'/1</span></div>'+
-    '</div></div>';
-
-  var listHtml=capHtml;
+  var listHtml='';
   dayEvents.forEach(function(e){
     var statProps=getStatProps(e.status);
     var colorClass=channelColors[e.channel]||'ch-chat';
     var wgClass=wgColors[e.workGroup]||'';
     var wgEvCls=wgEvClass[e.workGroup]||'';
-    var dotHtml=wgClass?'<span class="wg-dot '+wgClass+'" style="position:static;width:10px;height:10px"></span>':'';
-    var safeLdap=(e.ldap||'?').charAt(0).toUpperCase();
-    var avatarHtml='<img src="'+getMomaPhoto(e.ldap)+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--bg-surface)" onerror="this.outerHTML=\'<div class=&quot;ev-avatar&quot; style=&quot;width:40px;height:40px;font-size:16px&quot;>'+safeLdap+'</div>\'">';
+    var dotHtml=wgClass?'<span class="wg-dot '+wgClass+'"></span>':'';
+    var momaPrimary='https://moma-teams-photos.corp.google.com/photos/'+e.ldap+'?sz=100&type=PLUS';
+    var momaFallback='https://moma-teams-photos.corp.google.com/photos/'+e.ldap+'?sz=100&type=SECURITY&type=SILHOUETTE';
+    var avatarHtml='<img src="'+momaPrimary+'" class="ev-avatar" style="width:32px;height:32px" onerror="this.onerror=null;this.src=\''+momaFallback+'\';">';
     var rsClass=(e.reason==='Birthday')?'rs-bday':'';
     var style = '';
-    if(wgClass) style = 'border-left: 6px solid var(--'+wgClass+');';
+    if(wgClass) style = 'border-left: 4px solid var(--'+wgClass+');';
 
-    listHtml+='<div class="req-card '+statProps.cls+' '+rsClass+'" style="'+style+'margin-bottom:0;cursor:pointer" onclick="openViewModal(event,\''+e.id+'\')" onmouseenter="showEventDetails(event,\''+e.id+'\')" onmouseleave="closePopover()">'+
-      '<div class="req-header" style="padding:12px 16px">'+
-        '<div style="display:flex;align-items:center;gap:12px">'+avatarHtml+
-          '<div><div style="font-weight:700;font-size:15px">'+e.ldap+'</div><div style="font-size:11px;color:var(--text-muted)">'+e.workGroup+' · '+e.channel+'</div></div>'+
-        '</div>'+
-        dotHtml+
-      '</div></div>';
+    listHtml+='<div class="event '+colorClass+' '+statProps.cls+' '+rsClass+' '+wgEvCls+'" style="'+style+'margin-bottom:4px;padding:6px 12px;height:auto" onclick="openViewModal(event,\''+e.id+'\')" onmouseenter="showEventDetails(event,\''+e.id+'\')" onmouseleave="closePopover()" oncontextmenu="openCtxMenu(event,\''+e.id+'\')" tabindex="0" role="button" aria-label="'+e.ldap+' - '+e.channel+'">'+ avatarHtml+'<span class="ev-name" style="font-size:14px;margin-left:8px">'+e.ldap+'</span>'+dotHtml+'</div>';
   });
 
   if(dayEvents.length===0) {
@@ -2369,47 +2352,67 @@ function closeOverflow(){
   document.getElementById('overflowOv').classList.remove('on');
 }
 
-/* QoL #14: Popover with intelligent caret side */
+/* QoL #14: Popover with intelligent caret side and delay */
 function showEventDetails(ev,targetId){
-  var e=serverEvents.find(function(evnt){return evnt.id.toString()===targetId.toString()});
-  if(!e)return;
-  var po=document.getElementById('eventPopover');
-  var stat=getStatProps(e.status);
-  var safeLdap=(e.ldap||'?').charAt(0).toUpperCase();
-  document.getElementById('poAvatarWrap').innerHTML='<img src="'+getMomaPhoto(e.ldap)+'" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML=\''+safeLdap+'\'">';
-  document.getElementById('poTitle').innerText=e.ldap;
-  var reasonStr=(e.reason||'').trim();
-  var iconName=reasonIcons[reasonStr]||'calendar_today';
-  var iconHtml='<span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">'+iconName+'</span>';
-  document.getElementById('poReasonSub').innerHTML=iconHtml+(reasonStr||'Unknown Reason');
-  document.getElementById('poStatTxt').innerText=e.status||'Pending';
-  document.getElementById('poStatIcon').innerHTML=stat.icon;
-  document.getElementById('poBanner').style.background=stat.bg;
-  document.getElementById('poBanner').style.color=stat.txt;
-  var wgClass=wgColors[e.workGroup];
-  var dot=document.getElementById('poWgDot');
-  if(wgClass){dot.className='wg-dot '+wgClass;dot.style.display='block'}else{dot.style.display='none'}
-  document.getElementById('poChan').innerText=e.channel;
-  document.getElementById('poWg').innerText=e.workGroup;
-  document.getElementById('poSite').innerText=e.site;
-  document.getElementById('poAcc').innerText=e.accruals||'0';
-  document.getElementById('poAtt').innerText=e.attendance||'N/A';
-  var proofWrap=document.getElementById('poProofWrap');
-  if(e.proof&&typeof e.proof==='string'&&e.proof.startsWith('http')){document.getElementById('poProof').innerHTML='<a href="'+e.proof+'" target="_blank" style="color:var(--blue-main);text-decoration:none;font-weight:600">🔗 View</a>';proofWrap.style.display='flex'}else{proofWrap.style.display='none'}
-  var remarksRow=document.getElementById('poRemarksRow');
-  if(e.remarks){document.getElementById('poRemarks').innerText=e.remarks;remarksRow.classList.add('on')}else{remarksRow.classList.remove('on')}
-  po.style.display='flex';
-  /* Position then measure */
-  var poW=320,poH=240;
-  var top=ev.clientY+18,left=ev.clientX+18;
-  var caretRight=false;
-  if(left+poW>window.innerWidth){left=ev.clientX-poW-10;caretRight=true}
-  if(top+poH>window.innerHeight)top=ev.clientY-poH-10;
-  po.style.left=left+'px';po.style.top=top+'px';
-  po.classList.toggle('caret-right',caretRight);
-  po.classList.add('on');
+  clearTimeout(poTimer);
+  var target = ev.currentTarget;
+  poTimer = setTimeout(function(){
+    var e=serverEvents.find(function(evnt){return evnt.id.toString()===targetId.toString()});
+    if(!e)return;
+    var po=document.getElementById('eventPopover');
+    var stat=getStatProps(e.status);
+    var safeLdap=(e.ldap||'?').charAt(0).toUpperCase();
+    document.getElementById('poAvatarWrap').innerHTML='<img src="'+getMomaPhoto(e.ldap)+'" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML=\''+safeLdap+'\'">';
+    document.getElementById('poTitle').innerText=e.ldap;
+    var reasonStr=(e.reason||'').trim();
+    var iconName=reasonIcons[reasonStr]||'calendar_today';
+    var iconHtml='<span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">'+iconName+'</span>';
+    document.getElementById('poReasonSub').innerHTML=iconHtml+(reasonStr||'Unknown Reason');
+    document.getElementById('poStatTxt').innerText=(e.status||'Pending').toUpperCase();
+    document.getElementById('poStatIcon').innerHTML=stat.icon;
+    document.getElementById('poBanner').style.background=stat.bg;
+    document.getElementById('poBanner').style.color=stat.txt;
+    var wgClass=wgColors[e.workGroup];
+    var dot=document.getElementById('poWgDot');
+    if(wgClass){dot.className='wg-dot '+wgClass;dot.style.display='block'}else{dot.style.display='none'}
+    document.getElementById('poChan').innerText=e.channel;
+    document.getElementById('poWg').innerText=e.workGroup;
+    document.getElementById('poSite').innerText=e.site;
+    document.getElementById('poAcc').innerText=e.accruals||'0';
+    document.getElementById('poAtt').innerText=e.attendance||'N/A';
+    var proofWrap=document.getElementById('poProofWrap');
+    if(e.proof&&typeof e.proof==='string'&&e.proof.startsWith('http')){document.getElementById('poProof').innerHTML='<a href="'+e.proof+'" target="_blank" style="color:var(--blue-main);text-decoration:none;font-weight:600">🔗 View</a>';proofWrap.style.display='flex'}else{proofWrap.style.display='none'}
+    var remarksRow=document.getElementById('poRemarksRow');
+    if(e.remarks){document.getElementById('poRemarks').innerText=e.remarks;remarksRow.classList.add('on')}else{remarksRow.classList.remove('on')}
+    po.style.display='flex';
+
+    /* Position & Caret Logic */
+    var rect = target.getBoundingClientRect();
+    var poW = 320;
+    var poH = po.offsetHeight || 240;
+    var left = rect.left + (rect.width/2) - (poW/2);
+    var top = rect.top + rect.height + 10;
+    var posClass = 'pos-bottom';
+
+    if(top + poH > window.innerHeight){
+      top = rect.top - poH - 10;
+      posClass = 'pos-top';
+    }
+    if(left < 10) left = 10;
+    if(left + poW > window.innerWidth - 10) left = window.innerWidth - poW - 10;
+
+    var caret = document.getElementById('popoverCaret');
+    var caretLeft = (rect.left + rect.width/2) - left - 6;
+    caret.style.left = caretLeft + 'px';
+
+    po.style.left=left+'px';po.style.top=top+'px';
+    po.className = 'popover on ' + posClass;
+  }, 150);
 }
-function closePopover(){document.getElementById('eventPopover').classList.remove('on')}
+function closePopover(){
+  clearTimeout(poTimer);
+  document.getElementById('eventPopover').classList.remove('on');
+}
 
 function openViewModal(ev,targetId){
   if(ev)ev.stopPropagation();
