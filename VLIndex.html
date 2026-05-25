@@ -127,6 +127,17 @@
     .admin-btn-box:focus-visible{outline:none;box-shadow:var(--focus-ring)}
     .admin-btn-box .admin-lbl{font-size:14px;font-weight:600;font-family:'Google Sans'}
     .filter-section{padding:0 4px;margin-bottom:8px}
+    .preset-header{display:flex;justify-content:space-between;align-items:center;padding:0 12px 4px 16px}
+    .preset-title{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px}
+    .btn-save-preset{background:none;border:none;color:var(--blue-main);font-size:11px;font-weight:700;cursor:pointer;padding:4px 8px;border-radius:4px;transition:background 0.2s}
+    .btn-save-preset:hover{background:var(--blue-bg)}
+    .preset-list{display:flex;flex-direction:column;gap:4px;padding:0 8px}
+    .preset-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:12px;cursor:pointer;transition:all 0.2s;color:var(--text-main);font-size:13.5px;font-weight:500;background:var(--bg-surface);border:1px solid transparent}
+    .preset-item:hover{background:var(--bg-cell-hover)}
+    .preset-item.active{background:var(--blue-bg);color:var(--blue-txt);border-color:var(--blue-main)}
+    .preset-del{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;border-radius:50%;display:flex;opacity:0.3;transition:all 0.2s}
+    .preset-del:hover{opacity:1;color:var(--red-main);background:var(--red-bg)}
+    .preset-item:hover .preset-del{opacity:1}
     .filter-title{font-size:12px;font-weight:500;font-family:'Google Sans',sans-serif;color:var(--text-muted);margin-bottom:8px;padding-left:16px;letter-spacing:0.1px}
     .legend-item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:24px;font-size:14px;font-weight:400;color:var(--text-main);cursor:pointer;transition:all .2s;margin-bottom:4px}
     .legend-item:hover{background:var(--bg-cell-hover)}
@@ -438,6 +449,12 @@
     .original-form-card .ca.on{display:block}
     .original-form-card .ca-e{background:#fce8e6;color:#c5221f;border-color:#ea4335}
     .original-form-card .ca-ok{background:#e6f4ea;color:#137333;border-color:#34a853}
+    .original-form-card .ca-info{background:#e8f0fe;color:#185abc;border-color:#1a73e8}
+    .peer-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+    .peer-avatar-group{display:flex;align-items:center}
+    .peer-avatar{width:24px;height:24px;border-radius:50%;border:2px solid white;background:var(--border-grid);margin-left:-8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;color:var(--text-muted);text-transform:uppercase}
+    .peer-avatar:first-child{margin-left:0}
+    .peer-text{font-size:12.5px;font-weight:500;color:var(--text-main)}
     .original-form-card .bday-note{display:none;margin-top:8px;padding:11px 14px;background:#fef7e0;border:1.5px solid #fdd663;border-radius:8px;font-size:13px;color:#7a4f00}
     .original-form-card .bday-note.on{display:block}
     .original-form-card .decl-box{background:#f8f9fa;border-radius:14px;padding:16px 20px;border:1.5px solid #dadce0;display:flex;justify-content:space-between;align-items:center}
@@ -614,6 +631,13 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
         <div style="display:flex;align-items:center;gap:8px"><span class="material-symbols-rounded">admin_panel_settings</span><span class="admin-lbl">Admin Console</span></div>
         <span class="material-symbols-rounded" style="font-size:18px">chevron_right</span>
       </div>
+    </div>
+    <div class="filter-section" id="presetSection">
+      <div class="preset-header">
+        <span class="preset-title">Presets</span>
+        <button class="btn-save-preset" onclick="saveCurrentPreset()">Save Current</button>
+      </div>
+      <div class="preset-list" id="presetList"></div>
     </div>
     <div class="filter-section">
       <div class="filter-title">Channels</div>
@@ -913,6 +937,9 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
             <input type="date" id="vlDate" onchange="checkWknd();saveDraft()">
             <div class="ca ca-e" id="wkndBlock"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">block</span> Weekend detected.</div>
             <div class="ca ca-ok" id="dateOk">✓ Valid date.</div>
+            <div class="ca ca-info" id="peerBlock">
+              <div id="peerWrap" class="peer-row"></div>
+            </div>
           </div>
         </div>
         <div class="sec">Management &amp; Reason</div>
@@ -1165,6 +1192,7 @@ function loadDashboard(){
 window.addEventListener('load',function(){
   loadTheme();
   loadSettings();
+  renderPresets();
   setSyncState('idle');
   renderSkeleton();
   LDAP_SHUFFLED=shuffle(LDAPS);
@@ -1313,6 +1341,102 @@ function loadTheme() {
     try { if (localStorage.getItem('vl_darkMode') === '1') saved = 'dark'; } catch(e) {}
   }
   applyTheme(saved || 'default');
+}
+
+const _presetsKey = 'vl_filter_presets';
+function saveCurrentPreset() {
+  var name = prompt('Enter a name for this filter preset:');
+  if (!name || !name.trim()) return;
+  name = name.trim();
+
+  var preset = {
+    name: name,
+    channels: Array.from(document.querySelectorAll('.ch-filter:checked')).map(c => c.value),
+    statuses: Array.from(document.querySelectorAll('.stat-filter:checked')).map(c => c.value),
+    reasons: Array.from(document.querySelectorAll('.rs-filter:checked')).map(c => c.value),
+    workgroups: Array.from(document.querySelectorAll('.wg-filter:checked')).map(c => c.value),
+    sites: Array.from(document.querySelectorAll('.st-filter:checked')).map(c => c.value)
+  };
+
+  var presets = [];
+  try {
+    var raw = localStorage.getItem(_presetsKey);
+    if (raw) presets = JSON.parse(raw);
+  } catch(e) {}
+
+  presets.push(preset);
+  localStorage.setItem(_presetsKey, JSON.stringify(presets));
+  renderPresets();
+  showToast('Preset "' + name + '" saved', 'success');
+}
+
+function renderPresets() {
+  var presets = [];
+  try {
+    var raw = localStorage.getItem(_presetsKey);
+    if (raw) presets = JSON.parse(raw);
+  } catch(e) {}
+
+  var list = document.getElementById('presetList');
+  if (presets.length === 0) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--text-muted);padding:8px 16px;font-style:italic">No saved presets</div>';
+    return;
+  }
+
+  list.innerHTML = presets.map(function(p, idx) {
+    return '<div class="preset-item" onclick="applyPreset(' + idx + ')">' +
+             '<span>' + p.name + '</span>' +
+             '<button class="preset-del" onclick="deletePreset(event, ' + idx + ')" title="Delete preset">' +
+               '<span class="material-symbols-rounded" style="font-size:16px">delete</span>' +
+             '</button>' +
+           '</div>';
+  }).join('');
+}
+
+function applyPreset(idx) {
+  var presets = [];
+  try {
+    var raw = localStorage.getItem(_presetsKey);
+    if (raw) presets = JSON.parse(raw);
+  } catch(e) {}
+
+  var p = presets[idx];
+  if (!p) return;
+
+  var apply = function(selector, activeList) {
+    document.querySelectorAll(selector).forEach(function(chk) {
+      chk.checked = activeList.includes(chk.value);
+    });
+  };
+
+  apply('.ch-filter', p.channels);
+  apply('.stat-filter', p.statuses);
+  apply('.rs-filter', p.reasons);
+  apply('.wg-filter', p.workgroups);
+  apply('.st-filter', p.sites);
+
+  saveSettings();
+  renderCalendar();
+  showToast('Applied preset: ' + p.name, 'info');
+
+  document.querySelectorAll('.preset-item').forEach(function(el, i) {
+    el.classList.toggle('active', i === idx);
+  });
+}
+
+function deletePreset(ev, idx) {
+  ev.stopPropagation();
+  var presets = [];
+  try {
+    var raw = localStorage.getItem(_presetsKey);
+    if (raw) presets = JSON.parse(raw);
+  } catch(e) {}
+
+  var name = presets[idx].name;
+  presets.splice(idx, 1);
+  localStorage.setItem(_presetsKey, JSON.stringify(presets));
+  renderPresets();
+  showToast('Deleted preset: ' + name, 'info');
 }
 
 function saveSettings() {
@@ -2561,6 +2685,7 @@ function pickChip(el,grpId,color,hiddenId){
   document.querySelectorAll('#'+grpId+' .chip').forEach(function(c){c.classList.remove('a-blue','a-red','a-green','a-yellow')});
   el.classList.add('a-'+color);
   if(hiddenId)document.getElementById(hiddenId).value=el.dataset.val;
+  if(hiddenId==='chVal') checkWknd();
   if(hiddenId==='rsVal'){
     var isBday=(el.dataset.val==='Birthday');
     document.getElementById('bdayNote').classList.toggle('on',isBday);
@@ -2610,11 +2735,57 @@ function validateLdapOnSubmit(){var v=document.getElementById('ldapValue').value
 function checkWknd(){
   var ch=document.getElementById('chVal').value,dt=document.getElementById('vlDate').value;
   document.getElementById('wkndBlock').classList.remove('on');document.getElementById('dateOk').classList.remove('on');
+  document.getElementById('peerBlock').classList.remove('on');
   if(!ch||!dt)return;
+
+  updatePeerVisibility(dt);
+
   if(ch!=='Phone'){document.getElementById('dateOk').classList.add('on');return}
   var d=new Date(dt+'T00:00:00').getDay();
   if(d===0||d===6)document.getElementById('wkndBlock').classList.add('on');else document.getElementById('dateOk').classList.add('on');
   saveDraft();
+}
+
+function updatePeerVisibility(dt){
+  var peers = serverEvents.filter(function(e){
+    return e.date === dt && (e.status === 'Approved' || e.status === 'Birthday Leave' || e.status === 'Pending');
+  });
+
+  // Dedup by LDAP
+  var uniquePeers = [], seen = new Set();
+  peers.forEach(function(p){
+    if(!seen.has(p.ldap.toLowerCase())){
+      seen.add(p.ldap.toLowerCase());
+      uniquePeers.push(p);
+    }
+  });
+
+  var block = document.getElementById('peerBlock');
+  var wrap = document.getElementById('peerWrap');
+  if(uniquePeers.length === 0){
+    block.classList.remove('on');
+    return;
+  }
+
+  var avatars = '<div class="peer-avatar-group">';
+  uniquePeers.slice(0, 4).forEach(function(p){
+    var first = (p.ldap||'?').charAt(0).toUpperCase();
+    avatars += '<div class="peer-avatar"><img src="'+getMomaPhoto(p.ldap)+'" style="width:100%;height:100%;border-radius:50%" onerror="this.outerHTML=\'<span>'+first+'</span>\'"></div>';
+  });
+  avatars += '</div>';
+
+  var text = '<span class="peer-text">';
+  if(uniquePeers.length === 1){
+    text += uniquePeers[0].ldap + ' has also filed for this date.';
+  } else if(uniquePeers.length === 2){
+    text += uniquePeers[0].ldap + ' and 1 other have filed.';
+  } else {
+    text += uniquePeers[0].ldap + ' and ' + (uniquePeers.length - 1) + ' others have filed.';
+  }
+  text += '</span>';
+
+  wrap.innerHTML = avatars + text;
+  block.classList.add('on');
 }
 function toggleSub(){document.getElementById('subBtn').disabled=!document.getElementById('declChk').checked}
 function collectData(){return{ldap:document.getElementById('ldapValue').value.trim(),channel:document.getElementById('chVal').value,vlDate:document.getElementById('vlDate').value,teamLead:document.getElementById('tmVal').value,reasonForVL:document.getElementById('rsVal').value,workGroup:document.getElementById('wgVal').value,site:document.getElementById('stVal').value,accrualUrl:document.getElementById('acrUrl').value.trim(),accrualNum:document.getElementById('acrNum').value,month:document.getElementById('moVal').value,bdayDate:document.getElementById('bdayDate').value,proofUrl:document.getElementById('proofUrl').value.trim(),declared:document.getElementById('declChk').checked?'true':'false'}}
