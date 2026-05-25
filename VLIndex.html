@@ -97,9 +97,9 @@
 
     /* ── SIDEBAR ── */
     .app-body{display:flex;flex:1;overflow:hidden;position:relative}
-    .sidebar{width:280px;padding:24px 16px;background:var(--bg-sidebar);display:flex;flex-direction:column;gap:28px;overflow-y:auto;z-index:6;transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);border-right:1px solid var(--border-grid)}
+    .sidebar{width:280px;padding:24px 16px;background:var(--bg-sidebar);display:flex;flex-direction:column;gap:16px;overflow-y:auto;z-index:6;transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);border-right:1px solid var(--border-grid)}
     .sidebar.collapsed{width:0;padding:0;border:none;overflow:hidden}
-    .btn-create{display:flex;align-items:center;justify-content:center;gap:16px;background:var(--blue-bg);border:none;color:var(--blue-txt);padding:0 24px;height:56px;border-radius:16px;font-family:'Google Sans',sans-serif;font-weight:500;font-size:14px;cursor:pointer;box-shadow:var(--shadow-sm);transition:all .2s;margin:0 0 8px;flex-shrink:0;position:relative}
+    .btn-create{display:flex;align-items:center;justify-content:center;gap:16px;background:var(--blue-bg);border:none;color:var(--blue-txt);padding:0 24px;height:56px;border-radius:16px;font-family:'Google Sans',sans-serif;font-weight:600;font-size:16px;cursor:pointer;box-shadow:var(--shadow-sm);transition:all .2s;margin:0 0 8px;flex-shrink:0;position:relative}
     .btn-create:hover:not(:disabled){box-shadow:var(--shadow-md);filter:brightness(0.95)}
     .btn-create:active:not(:disabled){transform:scale(0.96)}
     .btn-create:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(70%);transform:none!important;box-shadow:none!important}
@@ -126,7 +126,7 @@
     .admin-btn-box:hover{filter:brightness(0.98);box-shadow:var(--shadow-md);transform:translateY(-1px)}
     .admin-btn-box:focus-visible{outline:none;box-shadow:var(--focus-ring)}
     .admin-btn-box .admin-lbl{font-size:14px;font-weight:600;font-family:'Google Sans'}
-    .filter-section{padding:0 4px;margin-bottom:8px}
+    .filter-section{padding:0 4px;margin-bottom:4px}
     .preset-header{display:flex;justify-content:space-between;align-items:center;padding:0 12px 4px 16px}
     .preset-title{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px}
     .btn-save-preset{background:none;border:none;color:var(--blue-main);font-size:11px;font-weight:700;cursor:pointer;padding:4px 8px;border-radius:4px;transition:background 0.2s}
@@ -138,8 +138,8 @@
     .preset-del{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;border-radius:50%;display:flex;opacity:0.3;transition:all 0.2s}
     .preset-del:hover{opacity:1;color:var(--red-main);background:var(--red-bg)}
     .preset-item:hover .preset-del{opacity:1}
-    .filter-title{font-size:12px;font-weight:500;font-family:'Google Sans',sans-serif;color:var(--text-muted);margin-bottom:8px;padding-left:16px;letter-spacing:0.1px}
-    .legend-item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:24px;font-size:14px;font-weight:400;color:var(--text-main);cursor:pointer;transition:all .2s;margin-bottom:4px}
+    .filter-title{font-size:12px;font-weight:500;font-family:'Google Sans',sans-serif;color:var(--text-muted);margin-bottom:4px;padding-left:16px;letter-spacing:0.1px}
+    .legend-item{display:flex;align-items:center;gap:12px;padding:6px 16px;border-radius:24px;font-size:14px;font-weight:400;color:var(--text-main);cursor:pointer;transition:all .2s;margin-bottom:2px}
     .legend-item:hover{background:var(--bg-cell-hover)}
     .legend-item input{display:none}
     .legend-dot{width:20px;height:20px;border-radius:4px;border:2px solid var(--text-muted);display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;background:transparent}
@@ -617,7 +617,7 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
 <div class="app-body">
   <aside class="sidebar" id="sidebar">
     <button class="btn-create btn-play-shine" id="btnCreateVL" onclick="openFormForCurrentMonth()">
-      <svg viewBox="0 0 36 36" width="32" height="32"><path fill="#34A853" d="M16 16v14h4V20z"/><path fill="#4285F4" d="M30 16H20l-4 4h14z"/><path fill="#FBBC05" d="M6 16v4h10l4-4z"/><path fill="#EA4335" d="M20 16V2h-4v14z"/></svg>
+      <span class="material-symbols-rounded" style="font-size:28px">add</span>
       Request VL
       <span class="slot-badge" id="slotBadge"></span>
     </button>
@@ -625,7 +625,7 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
       <span class="material-symbols-rounded" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none">search</span>
       <input type="text" class="search-input" id="ldapSearch" placeholder="Search LDAP…" autocomplete="off" spellcheck="false" oninput="debouncedRender()">
     </div>
-    <div id="sidebarExtra" style="display:flex;flex-direction:column;gap:12px;margin:0 12px">
+    <div id="sidebarExtra" style="display:flex;flex-direction:column;gap:8px;margin:0 12px">
       <div class="sup-toggle-box" id="supToggleContainer" style="display:none;margin:0"><span id="supTeamName">My Team Only</span><label class="switch"><input type="checkbox" id="supToggle" onchange="toggleTeamView()"><span class="slider"></span></label></div>
       <div class="admin-btn-box" id="adminBtnContainer" style="display:none;margin:0" onclick="openAdminConsole()" role="button" tabindex="0" onkeydown="if(event.key==='Enter')openAdminConsole()">
         <div style="display:flex;align-items:center;gap:8px"><span class="material-symbols-rounded">admin_panel_settings</span><span class="admin-lbl">Admin Console</span></div>
