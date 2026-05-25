@@ -4,9 +4,10 @@
   <base target="_top">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>">
+  <link rel="icon" href="https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg">
   <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&family=Google+Sans+Display:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
   <title>Google Play VL Calendar</title>
   <style>
     :root {
@@ -45,6 +46,14 @@
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Roboto',sans-serif;background:var(--bg-page);color:var(--text-main);height:100vh;overflow:hidden;display:flex;flex-direction:column}
+    .material-symbols-rounded, .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      line-height: 1;
+      width: 1em;
+      height: 1em;
+      vertical-align: middle;
+    }
 
     /* ── HEADER ── */
     header{height:64px;display:flex;align-items:center;padding:8px 24px;background:var(--bg-header);border-bottom:1px solid var(--border-grid);flex-shrink:0;z-index:10}
@@ -113,10 +122,10 @@
     .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background-color:white;transition:.3s;border-radius:50%}
     input:checked+.slider{background-color:var(--blue-main);opacity:1}
     input:checked+.slider:before{transform:translateX(16px)}
-    .admin-btn-box{display:flex;align-items:center;justify-content:space-between;margin:0 12px;padding:14px 16px;background:var(--red-bg);border-radius:var(--radius-md);cursor:pointer;transition:all .2s;color:var(--red-txt)}
-    .admin-btn-box:hover{filter:brightness(0.95)}
+    .admin-btn-box{display:flex;align-items:center;justify-content:space-between;margin:0 12px;padding:12px 16px;background:linear-gradient(135deg, var(--red-bg), rgba(186, 26, 26, 0.05));border:1px solid var(--red-border);border-radius:var(--radius-md);cursor:pointer;transition:all .2s;color:var(--red-txt);box-shadow:var(--shadow-sm)}
+    .admin-btn-box:hover{filter:brightness(0.98);box-shadow:var(--shadow-md);transform:translateY(-1px)}
     .admin-btn-box:focus-visible{outline:none;box-shadow:var(--focus-ring)}
-    .admin-btn-box span{font-size:14px;font-weight:600;font-family:'Google Sans'}
+    .admin-btn-box .admin-lbl{font-size:14px;font-weight:600;font-family:'Google Sans'}
     .filter-section{padding:0 4px;margin-bottom:8px}
     .filter-title{font-size:12px;font-weight:500;font-family:'Google Sans',sans-serif;color:var(--text-muted);margin-bottom:8px;padding-left:16px;letter-spacing:0.1px}
     .legend-item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:24px;font-size:14px;font-weight:400;color:var(--text-main);cursor:pointer;transition:all .2s;margin-bottom:4px}
@@ -282,19 +291,17 @@
     .empty-state{text-align:center;padding:40px 20px;color:var(--text-muted);display:flex;flex-direction:column;align-items:center}
     .empty-state svg{width:80px;height:80px;fill:var(--border-light);margin-bottom:16px}
 
-    /* ── OVERFLOW MODAL ── */
-    .side-drawer{position:fixed;top:0;right:-420px;width:420px;height:100vh;background:var(--bg-surface);box-shadow:var(--shadow-float);z-index:1000;transition:right 0.4s cubic-bezier(0.05, 0.7, 0.1, 1);display:flex;flex-direction:column;overflow:hidden;border-left:1px solid var(--border-grid)}
-    .side-drawer.on{right:0}
-    .sd-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.3);z-index:999;display:none;opacity:0;transition:opacity 0.3s ease;backdrop-filter:blur(2px)}
-    .sd-overlay.on{display:block;opacity:1}
-    .sd-head{padding:32px 24px 24px;border-bottom:1px solid var(--border-grid);display:flex;flex-direction:column;gap:8px;position:relative}
+    /* ── OVERFLOW MODAL (Centered) ── */
+    #overflowOv { z-index: 5000; }
+    .sd-cm { max-width: 460px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; }
+    .sd-head{padding: 24px 28px; border-bottom:1px solid var(--border-grid);display:flex;flex-direction:column;gap:8px;position:relative; background: var(--bg-sidebar);}
     .sd-title-wrap{display:flex;justify-content:space-between;align-items:flex-start}
-    .sd-title{font-family:'Google Sans Display';font-size:24px;font-weight:700;color:var(--text-title);letter-spacing:-0.5px}
+    .sd-title{font-family:'Google Sans Display';font-size:22px;font-weight:700;color:var(--text-title);letter-spacing:-0.5px}
     .sd-holiday{display:inline-flex;align-items:center;gap:8px;background:var(--orange-bg);color:var(--orange-txt);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-top:4px}
-    .sd-close{background:var(--bg-cell-hover);border:none;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;color:var(--text-main)}
-    .sd-close:hover{background:var(--border-grid);transform:rotate(90deg)}
-    .sd-list{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
-    .sd-empty{text-align:center;padding:80px 24px;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:16px}
+    .sd-close{background:transparent;border:none;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;color:var(--text-muted)}
+    .sd-close:hover{background:var(--bg-cell-hover);color:var(--text-main)}
+    .sd-list{flex:1;overflow-y:auto;padding:20px 28px 28px;display:flex;flex-direction:column;gap:12px}
+    .sd-empty{text-align:center;padding:60px 24px;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:16px}
     .sd-empty svg{width:64px;height:64px;opacity:0.2}
     .sd-cap-box{background:var(--bg-sidebar);border-radius:var(--radius-lg);padding:16px;margin-bottom:8px;border:1px solid var(--border-grid)}
     .sd-cap-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:12px}
@@ -449,16 +456,16 @@
     .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.58);backdrop-filter:blur(5px);justify-content:center;align-items:center;z-index:2000;padding:20px}
     .ov.on{display:flex}
     @keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
-    .cm{background:white;border-radius:20px;max-width:460px;width:100%;box-shadow:0 24px 72px rgba(0,0,0,.3);overflow:hidden;animation:popIn .32s cubic-bezier(.34,1.56,.64,1) both;color:#202124;font-family:'Google Sans',sans-serif}
-    .cm-head{background:linear-gradient(135deg,#e8f0fe,#d2e3fc);padding:22px 26px;border-bottom:1px solid #c5d8fb}
+    .cm{background:var(--bg-surface);border-radius:24px;max-width:460px;width:100%;box-shadow:var(--shadow-float);overflow:hidden;animation:popIn .32s cubic-bezier(.34,1.56,.64,1) both;color:var(--text-main);font-family:'Google Sans',sans-serif;border:1px solid var(--border-grid)}
+    .cm-head{background:linear-gradient(135deg,var(--blue-bg),var(--bg-sidebar));padding:22px 26px;border-bottom:1px solid var(--blue-border)}
     .cm-hr{display:flex;align-items:center;gap:14px;margin-bottom:3px}
     .cm-ico{width:42px;height:42px;border-radius:50%;background:white;box-shadow:0 2px 8px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0}
     .cm-ttl{font-family:'Google Sans Display',sans-serif;font-size:18px;font-weight:700;color:#202124}
-    .cm-sub{font-size:12.5px;color:#5f6368;padding-left:56px}
+    .cm-sub{font-size:12.5px;color:var(--text-muted);padding-left:56px}
     .cm-rows{padding:16px 26px 8px}
-    .crow{display:flex;padding:8px 0;border-bottom:1px solid #f1f3f4;font-size:13.5px}
-    .cl{width:140px;flex-shrink:0;color:#5f6368;font-size:12.5px;padding-top:1px}
-    .cv{color:#202124;font-weight:600;flex:1;word-break:break-all}
+    .crow{display:flex;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13.5px}
+    .cl{width:140px;flex-shrink:0;color:var(--text-muted);font-size:12.5px;padding-top:1px}
+    .cv{color:var(--text-main);font-weight:600;flex:1;word-break:break-all}
     .cm-ft{padding:14px 26px 22px;display:flex;gap:10px}
     .btn-ed{flex:1;padding:12px;border:1px solid var(--border-grid);border-radius:20px;background:var(--bg-surface);font:500 14px/1 'Google Sans',Arial;color:var(--text-muted);cursor:pointer;transition:all 0.2s}
     .btn-ed:hover{background:var(--bg-cell-hover);color:var(--text-main)}
@@ -507,9 +514,9 @@
     .cell.today:hover{background:rgba(26,115,232,.08)}
 
     /* ── HOLIDAYS ── */
-    .holiday-badge{font-size:9px;font-weight:800;color:var(--orange-main);background:var(--orange-bg);padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;display:inline-block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-    .cell.is-holiday{background:rgba(255,185,81,0.05)}
-    .cell.is-holiday .date-num:not(.today-num){color:var(--orange-main);font-weight:800}
+    .holiday-badge{font-size:9px;font-weight:800;color:var(--orange-main);background:var(--orange-bg);padding:2px 6px;border-radius:4px;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;border:1px solid var(--orange-main)}
+    .cell.is-holiday{background:rgba(255,185,81,0.15);border:2px solid var(--orange-main)!important;box-shadow:inset 0 0 12px rgba(255,185,81,0.1)}
+    .cell.is-holiday .date-num:not(.today-num){color:var(--orange-main);font-weight:900;text-shadow:0 0 1px rgba(0,0,0,0.1)}
 
     /* ── LIVE SYNC ── */
     @keyframes cellFlash{0%{background:rgba(26,115,232,.18)}100%{background:var(--bg-cell)}}
@@ -564,14 +571,14 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
 
 <header>
   <div class="h-left">
-    <button class="menu-btn" onclick="toggleSidebar()" aria-label="Toggle sidebar"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></button>
+    <button class="menu-btn" onclick="toggleSidebar()" aria-label="Toggle sidebar"><span class="material-symbols-rounded">menu</span></button>
     <div class="logo-wrapper"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg" alt="Calendar"><span><span class="brand">Play VL</span> Calendar</span></div>
   </div>
   <div class="h-center">
     <button class="btn-today" onclick="goToday()">Today</button>
     <div class="nav-arrows">
-      <button onclick="changeMonth(-1)" aria-label="Previous month"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
-      <button onclick="changeMonth(1)" aria-label="Next month"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
+      <button onclick="changeMonth(-1)" aria-label="Previous month"><span class="material-symbols-rounded">chevron_left</span></button>
+      <button onclick="changeMonth(1)" aria-label="Next month"><span class="material-symbols-rounded">chevron_right</span></button>
     </div>
     <div class="month-title" id="monthDisplay">Loading...</div>
     <div id="liveSyncDot" title="Auto-syncs every 10 seconds">
@@ -581,10 +588,10 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
     </div>
   </div>
   <div class="h-right">
-    <button class="btn-export" onclick="exportCSV()" title="Download current view as CSV"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>Export</button>
-    <button class="theme-btn" id="themeBtn" onclick="toggleThemePicker()" title="Change theme" aria-label="Change theme">🎨</button>
+    <button class="btn-export" onclick="exportCSV()" title="Download current view as CSV"><span class="material-symbols-rounded" style="font-size:20px">download</span>Export</button>
+    <button class="theme-btn" id="themeBtn" onclick="toggleThemePicker()" title="Change theme" aria-label="Change theme"><span class="material-symbols-rounded">palette</span></button>
     <div class="theme-picker-panel" id="themePickerPanel">
-      <div class="tp-title">Choose Theme</div>
+      <div class="tp-title"><span class="material-symbols-rounded" style="font-size:16px;vertical-align:middle;margin-right:4px">palette</span>Choose Theme</div>
       <div class="tp-grid" id="themeSwatchGrid"></div>
     </div>
     <div class="avatar" id="userAvatar" title="Loading user..." onclick="openUserDrawer()" role="button" tabindex="0" onkeydown="if(event.key==='Enter')openUserDrawer()">?</div>
@@ -599,14 +606,14 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
       <span class="slot-badge" id="slotBadge"></span>
     </button>
     <div class="search-container">
-      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      <span class="material-symbols-rounded" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none">search</span>
       <input type="text" class="search-input" id="ldapSearch" placeholder="Search LDAP…" autocomplete="off" spellcheck="false" oninput="debouncedRender()">
     </div>
     <div id="sidebarExtra" style="display:flex;flex-direction:column;gap:12px;margin:0 12px">
       <div class="sup-toggle-box" id="supToggleContainer" style="display:none;margin:0"><span id="supTeamName">My Team Only</span><label class="switch"><input type="checkbox" id="supToggle" onchange="toggleTeamView()"><span class="slider"></span></label></div>
       <div class="admin-btn-box" id="adminBtnContainer" style="display:none;margin:0" onclick="openAdminConsole()" role="button" tabindex="0" onkeydown="if(event.key==='Enter')openAdminConsole()">
-        <span>👑 Admin Console</span>
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="var(--red-main)"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+        <div style="display:flex;align-items:center;gap:8px"><span class="material-symbols-rounded">admin_panel_settings</span><span class="admin-lbl">Admin Console</span></div>
+        <span class="material-symbols-rounded" style="font-size:18px">chevron_right</span>
       </div>
     </div>
     <div class="filter-section">
@@ -623,10 +630,10 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
     </div>
     <div class="filter-section">
       <div class="filter-title">Reason</div>
-      <label class="legend-item"><input type="checkbox" checked value="Out of Town / Vacation" class="rs-filter"><div class="legend-dot" style="--dot-color:var(--neutral-main);--dot-shadow:rgba(95,99,104,.3)"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div><span class="lbl">✈️ Out of Town</span></label>
-      <label class="legend-item"><input type="checkbox" checked value="Personal" class="rs-filter"><div class="legend-dot" style="--dot-color:var(--neutral-main);--dot-shadow:rgba(95,99,104,.3)"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div><span class="lbl">👤 Personal</span></label>
-      <label class="legend-item"><input type="checkbox" checked value="Family Gathering" class="rs-filter"><div class="legend-dot" style="--dot-color:var(--neutral-main);--dot-shadow:rgba(95,99,104,.3)"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div><span class="lbl">🏠 Family</span></label>
-      <label class="legend-item"><input type="checkbox" checked value="Birthday" class="rs-filter"><div class="legend-dot" style="--dot-color:#7b1fa2;--dot-shadow:rgba(123,31,162,.3)"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div><span class="lbl">🎂 Birthday</span></label>
+      <label class="legend-item"><input type="checkbox" checked value="Out of Town / Vacation" class="rs-filter"><div class="legend-dot" style="--dot-color:var(--neutral-main);--dot-shadow:rgba(95,99,104,.3)"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div><span class="lbl"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">flight</span>Out of Town</span></label>
+      <label class="legend-item"><input type="checkbox" checked value="Personal" class="rs-filter"><div class="legend-dot" style="--dot-color:var(--neutral-main);--dot-shadow:rgba(95,99,104,.3)"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div><span class="lbl"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">person</span>Personal</span></label>
+      <label class="legend-item"><input type="checkbox" checked value="Family Gathering" class="rs-filter"><div class="legend-dot" style="--dot-color:var(--neutral-main);--dot-shadow:rgba(95,99,104,.3)"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div><span class="lbl"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">home</span>Family</span></label>
+      <label class="legend-item"><input type="checkbox" checked value="Birthday" class="rs-filter"><div class="legend-dot" style="--dot-color:#7b1fa2;--dot-shadow:rgba(123,31,162,.3)"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div><span class="lbl"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">cake</span>Birthday</span></label>
     </div>
     <div class="filter-section">
       <div class="filter-title">Workgroups</div>
@@ -694,16 +701,17 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
   </div>
 </div>
 
-<div class="sd-overlay" id="sdOverlay" onclick="closeOverflow()"></div>
-<div class="side-drawer" id="overflowModal">
-  <div class="sd-head">
-    <div class="sd-title-wrap">
-      <div class="sd-title" id="overflowTitle">Date Details</div>
-      <button class="sd-close" onclick="closeOverflow()"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+<div class="ov" id="overflowOv">
+  <div class="cm sd-cm" id="overflowModal">
+    <div class="sd-head">
+      <div class="sd-title-wrap">
+        <div class="sd-title" id="overflowTitle">Date Details</div>
+        <button class="sd-close" onclick="closeOverflow()">✕</button>
+      </div>
+      <div id="sdHolidayRow" class="sd-holiday" style="display:none;border:1px solid var(--orange-main)"><span class="material-symbols-rounded" style="font-size:18px">celebration</span> <span id="sdHolidayTxt"></span></div>
     </div>
-    <div id="sdHolidayRow" class="sd-holiday" style="display:none">🎉 <span id="sdHolidayTxt"></span></div>
+    <div class="sd-list" id="overflowList"></div>
   </div>
-  <div class="sd-list" id="overflowList"></div>
 </div>
 
 <div class="popover" id="eventPopover">
@@ -712,7 +720,7 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
     <div id="poAvatarWrap" style="width:36px;height:36px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--border-grid);display:flex;align-items:center;justify-content:center;font-weight:bold;color:var(--text-muted);font-size:16px"></div>
     <div style="flex:1;display:flex;flex-direction:column;margin-left:12px">
       <span class="po-agent" id="poTitle">LDAP</span>
-      <span id="poReasonSub" style="font-size:12.5px;color:var(--text-muted);margin-top:2px;font-weight:500">📅 Reason</span>
+      <span id="poReasonSub" style="font-size:12.5px;color:var(--text-muted);margin-top:2px;font-weight:500"><span class="material-symbols-rounded" style="font-size:16px;vertical-align:middle;margin-right:4px">event</span> Reason</span>
     </div>
     <div id="poWgDot" class="wg-dot" style="display:none"></div>
   </div>
@@ -745,8 +753,8 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
         <div><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Status</div><div style="font-size:14px;font-weight:700" id="viewModalStat"></div></div>
         <div id="viewModalProofWrap" style="display:none;grid-column:1/-1"><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase">Proof / Artifacts</div><div style="font-size:14px;font-weight:500;color:var(--text-main)" id="viewModalProof"></div></div>
       </div>
-    <div id="viewModalHoliday" style="display:none;margin:0 26px 12px;padding:8px 12px;background:var(--orange-bg);color:var(--orange-txt);border-radius:var(--radius-sm);font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px">
-       <span>🎉</span> <span id="viewModalHolidayName"></span>
+    <div id="viewModalHoliday" style="display:none;margin:0 26px 12px;padding:8px 12px;background:var(--orange-bg);color:var(--orange-txt);border-radius:var(--radius-sm);font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;border:1px solid var(--orange-main)">
+       <span class="material-symbols-rounded" style="font-size:18px">celebration</span> <span id="viewModalHolidayName"></span>
     </div>
       <div id="viewModalRemarksBox" style="display:none;background:var(--bg-cell-hover);padding:12px;border-radius:0 8px 8px 8px;border-left:3px solid var(--text-muted)">
         <div style="font-size:10px;font-weight:700;color:var(--text-main);text-transform:uppercase;margin-bottom:4px">Supervisor Remarks</div>
@@ -777,9 +785,9 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
   <div class="ac-wrapper">
     <div class="ac-head">
       <div class="ac-head-top">
-        <div class="ac-ttl">👑 Admin Command Center <span class="ac-count-badge" id="acPendingBadge">0</span></div>
+        <div class="ac-ttl"><span class="material-symbols-rounded" style="font-size:28px">admin_panel_settings</span> Admin Command Center <span class="ac-count-badge" id="acPendingBadge">0</span></div>
         <div style="display:flex;align-items:center;gap:12px">
-          <button class="btn-send-mail" onclick="openSendSummary()"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg> Send Notifications</button>
+          <button class="btn-send-mail" onclick="openSendSummary()"><span class="material-symbols-rounded">send</span> Send Notifications</button>
           <button onclick="document.getElementById('adminOv').classList.remove('on')" style="background:white;border:1px solid #dadce0;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px;color:#5f6368;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.1);transition:background .2s">✕</button>
         </div>
       </div>
@@ -877,7 +885,7 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
     <button class="form-close-x" onclick="closeForm()">×</button>
     <div class="original-form-card" id="mainCard">
       <div class="header-svg-wrap"><svg viewBox="0 0 840 160" style="display:block;width:100%"><rect width="840" height="160" fill="#1a73e8"/><ellipse cx="0" cy="160" rx="170" ry="95" fill="#34a853"/><ellipse cx="130" cy="160" rx="145" ry="75" fill="#fbbc04"/><ellipse cx="400" cy="160" rx="200" ry="108" fill="#ea4335" opacity=".87"/><ellipse cx="640" cy="160" rx="200" ry="85" fill="#34a853" opacity=".9"/><ellipse cx="840" cy="160" rx="135" ry="65" fill="#fbbc04" opacity=".82"/><text x="420" y="80" text-anchor="middle" font-family="'Google Sans Display'" font-size="38" font-weight="700" fill="white">Google Play VL Calendar</text><text x="420" y="108" text-anchor="middle" font-family="'Google Sans'" font-size="14" fill="white" opacity=".8">gUP Play Ops — Leave Application</text></svg></div>
-      <div class="info"><strong>⚠️ Before you apply:</strong> Check Dashboard for open slots.<ul><li>Chat: 2 slots/day | Phone / Email / HVU: 1 slot/day</li></ul></div>
+      <div class="info"><strong><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">warning</span> Before you apply:</strong> Check Dashboard for open slots.<ul><li>Chat: 2 slots/day | Phone / Email / HVU: 1 slot/day</li></ul></div>
       <div class="draft" id="draftBanner">✦ Draft restored. <button class="draft-x" onclick="clearDraft()">Clear Draft</button></div>
       <div class="fb">
         <div class="sec">Identity &amp; Request details</div>
@@ -895,9 +903,9 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
           <div class="f">
             <label>Channel <span class="req">*</span></label>
             <div class="chips" id="chGrp">
-              <div class="chip" data-val="Phone" onclick="pickChip(this,'chGrp','blue','chVal');checkWknd()" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){pickChip(this,'chGrp','blue','chVal');checkWknd()}">📞 Phone</div>
-              <div class="chip" data-val="Chat" onclick="pickChip(this,'chGrp','green','chVal');checkWknd()" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){pickChip(this,'chGrp','green','chVal');checkWknd()}">💬 Chat</div>
-              <div class="chip" data-val="Email" onclick="pickChip(this,'chGrp','yellow','chVal');checkWknd()" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){pickChip(this,'chGrp','yellow','chVal');checkWknd()}">✉️ Email</div>
+              <div class="chip" data-val="Phone" onclick="pickChip(this,'chGrp','blue','chVal');checkWknd()" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){pickChip(this,'chGrp','blue','chVal');checkWknd()}"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">call</span> Phone</div>
+              <div class="chip" data-val="Chat" onclick="pickChip(this,'chGrp','green','chVal');checkWknd()" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){pickChip(this,'chGrp','green','chVal');checkWknd()}"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">chat</span> Chat</div>
+              <div class="chip" data-val="Email" onclick="pickChip(this,'chGrp','yellow','chVal');checkWknd()" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){pickChip(this,'chGrp','yellow','chVal');checkWknd()}"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">mail</span> Email</div>
             </div>
             <input type="hidden" id="chVal">
             <div class="field-err-tip" id="errChip-chGrp">Please select a channel.</div>
@@ -905,7 +913,7 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
           <div class="f">
             <label>VL Date <span class="req">*</span></label>
             <input type="date" id="vlDate" onchange="checkWknd();saveDraft()">
-            <div class="ca ca-e" id="wkndBlock">⛔ Weekend detected.</div>
+            <div class="ca ca-e" id="wkndBlock"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">block</span> Weekend detected.</div>
             <div class="ca ca-ok" id="dateOk">✓ Valid date.</div>
           </div>
         </div>
@@ -931,13 +939,13 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
           <div class="f">
             <label>Reason <span class="req">*</span></label>
             <div class="chips" id="rsGrp">
-              <div class="chip" data-val="Out of Town / Vacation" onclick="pickChip(this,'rsGrp','blue','rsVal')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')pickChip(this,'rsGrp','blue','rsVal')">✈️ Out of Town</div>
-              <div class="chip" data-val="Personal" onclick="pickChip(this,'rsGrp','blue','rsVal')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')pickChip(this,'rsGrp','blue','rsVal')">👤 Personal</div>
-              <div class="chip" data-val="Family Gathering" onclick="pickChip(this,'rsGrp','blue','rsVal')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')pickChip(this,'rsGrp','blue','rsVal')">🏠 Family Gathering</div>
-              <div class="chip" data-val="Birthday" onclick="pickChip(this,'rsGrp','yellow','rsVal')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')pickChip(this,'rsGrp','yellow','rsVal')">🎂 Birthday</div>
+              <div class="chip" data-val="Out of Town / Vacation" onclick="pickChip(this,'rsGrp','blue','rsVal')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')pickChip(this,'rsGrp','blue','rsVal')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">flight</span>Out of Town</div>
+              <div class="chip" data-val="Personal" onclick="pickChip(this,'rsGrp','blue','rsVal')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')pickChip(this,'rsGrp','blue','rsVal')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">person</span>Personal</div>
+              <div class="chip" data-val="Family Gathering" onclick="pickChip(this,'rsGrp','blue','rsVal')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')pickChip(this,'rsGrp','blue','rsVal')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">home</span>Family Gathering</div>
+              <div class="chip" data-val="Birthday" onclick="pickChip(this,'rsGrp','yellow','rsVal')" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' ')pickChip(this,'rsGrp','yellow','rsVal')"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">cake</span>Birthday</div>
             </div>
             <input type="hidden" id="rsVal">
-            <div class="bday-note" id="bdayNote">⚠️ Birthday Leave is only on exact birth date.</div>
+            <div class="bday-note" id="bdayNote"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">warning</span> Birthday Leave is only on exact birth date.</div>
             <div class="field-err-tip" id="errChip-rsGrp">Please select a reason.</div>
           </div>
         </div>
@@ -984,7 +992,7 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
 </div>
 
 <div class="ov" id="cnfOv"><div class="cm"><div class="cm-head"><div class="cm-ttl">Review Application</div></div><div class="cm-rows" id="cnfRows"></div><div class="cm-ft"><button class="btn-ed" onclick="closeConfirm()">← Edit</button><button class="btn-go" id="cnfBtn" onclick="submitForm()"><span id="cnfTxt">Confirm &amp; Submit</span><div class="spn" id="cnfSpn" style="border-color:rgba(255,255,255,.4);border-top-color:white"></div></button></div></div></div>
-<div class="ov" id="sucOv"><div class="sm"><div class="sm-ring"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#34a853" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="sm-ttl" id="sucTitle">Submitted!</div><div class="sm-txt" id="sucTxt">Your request has been logged.</div><div class="sm-det" id="sucDet"></div><p class="sm-email" id="sucEmail"></p><button class="btn-new" onclick="resetAndCloseAll()">Back to Dashboard</button></div></div>
+<div class="ov" id="sucOv"><div class="sm"><div class="sm-ring"><span class="material-symbols-rounded" style="font-size:48px;color:#34a853">check_circle</span></div><div class="sm-ttl" id="sucTitle">Submitted!</div><div class="sm-txt" id="sucTxt">Your request has been logged.</div><div class="sm-det" id="sucDet"></div><p class="sm-email" id="sucEmail"></p><button class="btn-new" onclick="resetAndCloseAll()">Back to Dashboard</button></div></div>
 
 <div id="toastContainer"></div>
 <canvas id="particleCanvas"></canvas>
@@ -1007,7 +1015,7 @@ let _ctxEventId=null;
 // QoL #1: LDAP dropdown keyboard nav state
 let _ldapFocusIdx=-1;
 
-const reasonEmojis={"Out of Town / Vacation":"✈️","Personal":"👤","Family Gathering":"🏠","Birthday":"🎂"};
+const reasonIcons={"Out of Town / Vacation":"flight","Personal":"person","Family Gathering":"home","Birthday":"cake"};
 const HOLIDAYS_2026 = {
   "2026-01-01": "New Year's Day",
   "2026-02-17": "Chinese New Year",
@@ -1043,11 +1051,11 @@ var CHIP_COLORS=['a-blue','a-green','a-red','a-yellow'];
 /* ── TOAST ── */
 function showToast(msg,type,duration){
   type=type||'info';duration=duration||4000;
-  var icons={success:'✅',error:'❌',info:'ℹ️',warn:'⚠️'};
+  var icons={success:'check_circle',error:'error',info:'info',warn:'warning'};
   var container=document.getElementById('toastContainer');
   var toast=document.createElement('div');
   toast.className='toast toast-'+type;
-  toast.innerHTML='<span class="toast-icon">'+icons[type]+'</span><span class="toast-msg">'+msg+'</span><button class="toast-close" onclick="this.parentElement.remove()">×</button>';
+  toast.innerHTML='<span class="toast-icon material-symbols-rounded">'+icons[type]+'</span><span class="toast-msg">'+msg+'</span><button class="toast-close" onclick="this.parentElement.remove()">×</button>';
   container.appendChild(toast);
   requestAnimationFrame(function(){requestAnimationFrame(function(){toast.classList.add('show')})});
   setTimeout(function(){toast.classList.add('hide');setTimeout(function(){if(toast.parentElement)toast.remove()},400)},duration);
@@ -1149,7 +1157,7 @@ function loadDashboard(){
       clearTimeout(_loadTimeout);
       if(err&&err.message&&err.message.includes('Too many')){showToast('Too many reloads — please wait a moment.','warn',6000);return}
       if(_loadAttempts<3)setTimeout(loadDashboard,2000);
-      else showLoadError('⚠️ '+((err&&err.message)?err.message:'Server Error'),false);
+      else showLoadError('Error: '+((err&&err.message)?err.message:'Server Error'),false);
     })
     .getDashboardPayload();
 }
@@ -1217,7 +1225,7 @@ document.addEventListener('keydown',function(e){
     if(document.getElementById('adminOv').classList.contains('on')){document.getElementById('adminOv').classList.remove('on');return}
     if(document.getElementById('formModal').classList.contains('on')){closeForm();return}
     if(document.getElementById('userDrawer').classList.contains('on')){closeDrawer();return}
-    if(document.getElementById('overflowModal').classList.contains('on')){closeOverflow();return}
+    if(document.getElementById('overflowOv').classList.contains('on')){closeOverflow();return}
   }
 });
 
@@ -1265,13 +1273,13 @@ function normalizeMonthFull(raw){var d=new Date(raw);if(!isNaN(d.getTime())&&raw
 /* QoL #2: dark mode persistence */
 /* ── THEME SYSTEM ── */
 const _THEMES = [
-  {id:'default',  label:'Standard',  emoji:'🎨',  dots:['#005ac1','#006d31','#ba1a1a'], cls:null},
-  {id:'dark',     label:'Night',     emoji:'🌙',  dots:['#adc6ff','#81d694','#ffb4ab'], cls:'dark-mode'},
-  {id:'ocean',    label:'Ocean',     emoji:'🌊',  dots:['#76d1ff','#6edba2','#ffb4ab'], cls:'theme-ocean'},
-  {id:'blossom',  label:'Blossom',   emoji:'🌸',  dots:['#bc004b','#006d31','#ba1a1a'], cls:'theme-blossom'},
-  {id:'forest',   label:'Forest',    emoji:'🌲',  dots:['#a1d39a','#a1d39a','#ffb4ab'], cls:'theme-forest'},
-  {id:'dusk',     label:'Dusk',      emoji:'🌅',  dots:['#ffb4a9','#81d694','#ffb4ab'], cls:'theme-dusk'},
-  {id:'amethyst', label:'Amethyst',  emoji:'💜',  dots:['#d0bcff','#81d694','#ffb4ab'], cls:'theme-amethyst'},
+  {id:'default',  label:'Standard',  icon:'palette',        dots:['#005ac1','#006d31','#ba1a1a'], cls:null},
+  {id:'dark',     label:'Night',     icon:'dark_mode',      dots:['#adc6ff','#81d694','#ffb4ab'], cls:'dark-mode'},
+  {id:'ocean',    label:'Ocean',     icon:'water',          dots:['#76d1ff','#6edba2','#ffb4ab'], cls:'theme-ocean'},
+  {id:'blossom',  label:'Blossom',   icon:'filter_vintage', dots:['#bc004b','#006d31','#ba1a1a'], cls:'theme-blossom'},
+  {id:'forest',   label:'Forest',    icon:'forest',         dots:['#a1d39a','#a1d39a','#ffb4ab'], cls:'theme-forest'},
+  {id:'dusk',     label:'Dusk',      icon:'wb_twilight',    dots:['#ffb4a9','#81d694','#ffb4ab'], cls:'theme-dusk'},
+  {id:'amethyst', label:'Amethyst',  icon:'auto_awesome',   dots:['#d0bcff','#81d694','#ffb4ab'], cls:'theme-amethyst'},
 ];
 const _ALL_THEME_CLASSES = ['dark-mode','theme-ocean','theme-blossom','theme-forest','theme-dusk','theme-amethyst'];
 let _currentThemeId = 'default';
@@ -1351,7 +1359,7 @@ function buildThemeSwatches() {
     el.className = 'theme-swatch' + (_currentThemeId === t.id ? ' active' : '');
     el.dataset.theme = t.id;
     const dotsHtml = t.dots.map(c => `<span class="swatch-dot" style="background:${c}"></span>`).join('');
-    el.innerHTML = `<div class="swatch-preview">${dotsHtml}</div><span>${t.emoji} ${t.label}</span>`;
+    el.innerHTML = `<div class="swatch-preview">${dotsHtml}</div><span><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">${t.icon}</span> ${t.label}</span>`;
     el.onclick = () => { applyTheme(t.id); closeThemePicker(); };
     grid.appendChild(el);
   });
@@ -1595,7 +1603,7 @@ function quickAdminAction(uuid,status,btn){
   if(!ev) return;
 
   var originalHTML = btn.innerHTML;
-  btn.innerHTML = '⏳';
+  btn.innerHTML = '<div class="spn" style="display:inline-block;border-color:rgba(255,255,255,.4);border-top-color:white;width:14px;height:14px"></div>';
   btn.disabled = true;
 
   google.script.run
@@ -1716,7 +1724,7 @@ function generateScorecard(dateStr,channel,site){
 function setRequestStatus(eventId,oldStatus,newStatus,btnEl,inputId){
   var commentBox=document.getElementById(inputId);
   var adminCommentStr=commentBox?commentBox.value.trim():'';
-  if(btnEl){var originalText=btnEl.innerText;btnEl.innerText='⏳';btnEl.disabled=true}
+  if(btnEl){var originalText=btnEl.innerText;btnEl.innerHTML='<div class="spn" style="display:inline-block;border-color:rgba(255,255,255,.4);border-top-color:white;width:14px;height:14px"></div>';btnEl.disabled=true}
   google.script.run
     .withSuccessHandler(function(res){
       if(btnEl){btnEl.innerText=originalText;btnEl.disabled=false}
@@ -1953,7 +1961,8 @@ function renderAdminQueue(skipDropdownRebuild){
     '<th class="sticky-col" style="text-align:right;min-width:360px">Actions &amp; Note</th>'+
     '</tr></thead><tbody>';
   filtered.forEach(function(e, i){
-    var emoji=reasonEmojis[e.reason]||'📅';
+    var iconName=reasonIcons[e.reason]||'calendar_today';
+    var iconHtml='<span class="material-symbols-rounded" style="font-size:16px;vertical-align:middle;margin-right:4px">'+iconName+'</span>';
     var momaPrimary='https://moma-teams-photos.corp.google.com/photos/'+e.ldap+'?sz=600&type=PLUS';
     var momaFallback='https://moma-teams-photos.corp.google.com/photos/'+e.ldap+'?sz=600&type=SECURITY&type=SILHOUETTE';
     var avatarHtml='<img src="'+momaPrimary+'" onerror="this.onerror=null;this.src=\''+momaFallback+'\';" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid var(--border-light)">';
@@ -1969,7 +1978,7 @@ function renderAdminQueue(skipDropdownRebuild){
     html+='<td><div style="display:flex;align-items:center;gap:8px">'+avatarHtml+'<span style="font-weight:700">'+e.ldap+'</span></div></td>';
     html+='<td><span style="font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:10px;background:var(--blue-bg);color:var(--blue-txt)">'+e.channel+'</span></td>';
     html+='<td><span style="font-size:11.5px;font-weight:600;color:var(--text-muted)">'+( e.workGroup||'N/A')+'</span></td>';
-    html+='<td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+emoji+' '+e.reason+'</td>';
+    html+='<td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+iconHtml+' '+e.reason+'</td>';
     html+='<td style="font-weight:600;color:var(--text-main)">'+( e.attendance||'N/A')+'</td>';
     html+='<td>'+accVal+'</td>';
     html+='<td style="text-align:center">'+proofIcon+'</td>';
@@ -2126,9 +2135,10 @@ function renderUserRequests(){
   uniqueMyEvents.forEach(function(e, i){
     var stat=getStatProps(e.status);
     var reasonStr=(e.reason||'').trim();
-    var emoji=reasonEmojis[reasonStr]||'📅';
+    var iconName=reasonIcons[reasonStr]||'calendar_today';
+    var iconHtml='<span class="material-symbols-rounded" style="font-size:16px;vertical-align:middle;margin-right:4px">'+iconName+'</span>';
     var dStr=new Date(e.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-    var reqTitle=(drawerMode==='team')?(emoji+' '+e.reason+' - '+e.channel):(emoji+' '+e.reason);
+    var reqTitle=(drawerMode==='team')?(iconHtml+e.reason+' - '+e.channel):(iconHtml+e.reason);
     var momaPrimary='https://moma-teams-photos.corp.google.com/photos/'+e.ldap+'?sz=100&type=PLUS';
     var momaFallback='https://moma-teams-photos.corp.google.com/photos/'+e.ldap+'?sz=100&type=SECURITY&type=SILHOUETTE';
     var agentAvatar='';
@@ -2141,7 +2151,7 @@ function renderUserRequests(){
 
     // Quick Actions for Drawer
     var actionsHtml = '<div style="display:flex;gap:8px;margin-top:16px;">';
-    actionsHtml += '<button class="ac-act-btn" style="background:var(--bg-cell-hover);color:var(--text-main);flex:1;padding:6px;font-size:11px;" onclick="jumpToDate(\''+e.date+'\')">📍 View on Cal</button>';
+    actionsHtml += '<button class="ac-act-btn" style="background:var(--bg-cell-hover);color:var(--text-main);flex:1;padding:6px;font-size:11px;" onclick="jumpToDate(\''+e.date+'\')"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:middle;margin-right:4px">location_on</span> View on Cal</button>';
 
     if(drawerMode === 'my' && stat.key === 'pending') {
       actionsHtml += '<button class="ac-act-btn" style="background:var(--red-bg);color:var(--red-main);flex:1;padding:6px;font-size:11px;" onclick="cancelRequestFromDrawer(\''+e.id+'\',\''+e.date+'\')">✕ Cancel</button>';
@@ -2225,7 +2235,7 @@ function renderCalendar(){
     var html='<div class="cell '+wkndClass+' '+holidayClass+' '+(isToday?'today':'')+'" onclick="openFormForDate(\''+dateStr+'\')" tabindex="0" role="gridcell" aria-label="'+MO_NAMES[month]+' '+day+'" style="animation-delay:'+staggerDelay+'s">';
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;">';
     html += '<div class="date-num '+(isToday?'today-num':'')+'">'+ day+'</div>';
-    if(holidayName) html += '<div class="holiday-badge" title="'+holidayName+'">'+holidayName+'</div>';
+    if(holidayName) html += '<div class="holiday-badge" title="'+holidayName+'"><span class="material-symbols-rounded" style="font-size:12px">celebration</span> '+holidayName+'</div>';
     html += '</div>';
 
     // Capacity Indicators (Group A focus)
@@ -2266,9 +2276,9 @@ function renderCalendar(){
       return '<div class="event '+colorClass+' '+statProps.cls+' '+rsClass+' '+wgEvCls+'" style="'+style+'" onclick="openViewModal(event,\''+e.id+'\')" onmouseenter="showEventDetails(event,\''+e.id+'\')" onmouseleave="closePopover()" oncontextmenu="openCtxMenu(event,\''+e.id+'\')" tabindex="0" role="button" aria-label="'+e.ldap+' - '+e.channel+'">'+ avatarHtml+'<span class="ev-name">'+e.ldap+'</span>'+dotHtml+'</div>';
     }
 
-    if(dayEvents.length>1){
-      dayEvents.slice(0,1).forEach(function(e){html+=renderEventChip(e)});
-      html+='<div class="event-more" onclick="showDayOverflow(event,\''+dateStr+'\')">+' +(dayEvents.length-1)+' others</div>';
+    if(dayEvents.length>4){
+      dayEvents.slice(0,4).forEach(function(e){html+=renderEventChip(e)});
+      html+='<div class="event-more" onclick="showDayOverflow(event,\''+dateStr+'\')">+' +(dayEvents.length-4)+' others</div>';
     }else{
       dayEvents.forEach(function(e){html+=renderEventChip(e)});
     }
@@ -2282,7 +2292,7 @@ function renderCalendar(){
 
 /* QoL #5: Smarter overflow modal positioning */
 function showDayOverflow(ev,dateStr){
-  ev.stopPropagation();
+  if(ev) ev.stopPropagation();
   var activeWGs=Array.from(document.querySelectorAll('.wg-filter:checked')).map(function(el){return el.value});
   var activeSites=Array.from(document.querySelectorAll('.st-filter:checked')).map(function(el){return el.value});
   var activeChans=Array.from(document.querySelectorAll('.ch-filter:checked')).map(function(el){return el.value});
@@ -2339,7 +2349,7 @@ function showDayOverflow(ev,dateStr){
     var style = '';
     if(wgClass) style = 'border-left: 6px solid var(--'+wgClass+');';
 
-    listHtml+='<div class="req-card '+statProps.cls+' '+rsClass+'" style="'+style+'margin-bottom:0;cursor:pointer" onclick="openViewModal(event,\''+e.id+'\')">'+
+    listHtml+='<div class="req-card '+statProps.cls+' '+rsClass+'" style="'+style+'margin-bottom:0;cursor:pointer" onclick="openViewModal(event,\''+e.id+'\')" onmouseenter="showEventDetails(event,\''+e.id+'\')" onmouseleave="closePopover()">'+
       '<div class="req-header" style="padding:12px 16px">'+
         '<div style="display:flex;align-items:center;gap:12px">'+avatarHtml+
           '<div><div style="font-weight:700;font-size:15px">'+e.ldap+'</div><div style="font-size:11px;color:var(--text-muted)">'+e.workGroup+' · '+e.channel+'</div></div>'+
@@ -2353,12 +2363,10 @@ function showDayOverflow(ev,dateStr){
   }
 
   document.getElementById('overflowList').innerHTML=listHtml;
-  document.getElementById('overflowModal').classList.add('on');
-  document.getElementById('sdOverlay').classList.add('on');
+  document.getElementById('overflowOv').classList.add('on');
 }
 function closeOverflow(){
-  document.getElementById('overflowModal').classList.remove('on');
-  document.getElementById('sdOverlay').classList.remove('on');
+  document.getElementById('overflowOv').classList.remove('on');
 }
 
 /* QoL #14: Popover with intelligent caret side */
@@ -2371,8 +2379,9 @@ function showEventDetails(ev,targetId){
   document.getElementById('poAvatarWrap').innerHTML='<img src="'+getMomaPhoto(e.ldap)+'" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML=\''+safeLdap+'\'">';
   document.getElementById('poTitle').innerText=e.ldap;
   var reasonStr=(e.reason||'').trim();
-  var emoji=reasonEmojis[reasonStr]||'📅';
-  document.getElementById('poReasonSub').innerText=emoji+' '+(reasonStr||'Unknown Reason');
+  var iconName=reasonIcons[reasonStr]||'calendar_today';
+  var iconHtml='<span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">'+iconName+'</span>';
+  document.getElementById('poReasonSub').innerHTML=iconHtml+(reasonStr||'Unknown Reason');
   document.getElementById('poStatTxt').innerText=e.status||'Pending';
   document.getElementById('poStatIcon').innerHTML=stat.icon;
   document.getElementById('poBanner').style.background=stat.bg;
@@ -2416,9 +2425,10 @@ function openViewModal(ev,targetId){
   document.getElementById('viewModalAvatar').innerHTML='<img src="'+momaPrimary+'" onerror="this.onerror=null;this.src=\''+momaFallback+'\';" style="width:100%;height:100%;object-fit:cover">';
   document.getElementById('viewModalTitle').innerText=e.ldap;
   var reasonStr=(e.reason||'').trim();
-  var emoji=reasonEmojis[reasonStr]||'📅';
+  var iconName=reasonIcons[reasonStr]||'calendar_today';
+  var iconHtml='<span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;margin-right:4px">'+iconName+'</span>';
   var dStr=new Date(e.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  document.getElementById('viewModalSub').innerHTML=emoji+' '+reasonStr+' &bull; '+dStr;
+  document.getElementById('viewModalSub').innerHTML=iconHtml+reasonStr+' &bull; '+dStr;
   document.getElementById('viewModalChan').innerText=e.channel;
   var accVal=e.accruals||'0';
   if(e.accrualsProof&&e.accrualsProof.startsWith('http'))accVal+=' <a href="'+e.accrualsProof+'" target="_blank" style="margin-left:6px;font-size:11px;color:var(--blue-main);text-decoration:none">(View Proof)</a>';
@@ -2458,6 +2468,11 @@ function openViewModal(ev,targetId){
   }
   document.getElementById('viewOv').classList.add('on');
   if(reasonStr==='Birthday'&&stat.key==='approved')setTimeout(function(){confetti({particleCount:100,spread:70,origin:{y:.6},zIndex:3000})},150);
+}
+
+function formatReason(reason){
+  var iconName=reasonIcons[reason]||'calendar_today';
+  return '<span class="material-symbols-rounded" style="font-size:16px;vertical-align:middle;margin-right:4px">'+iconName+'</span>'+reason;
 }
 
 function setDateRange(monthLabel){
@@ -2633,7 +2648,7 @@ function openConfirm(){
   clearFieldErrors();
   if(!validateLdapOnSubmit()){showErr('❌ Please select a valid LDAP from the dropdown.');return}
   var d=collectData();var err=clientValidate(d);if(err){showErr('❌ '+err);return}_pendingData=d;
-  var rows=[['LDAP',d.ldap],['Channel',d.channel],['VL Date',d.vlDate],['Team Lead',d.teamLead],['Reason for VL',d.reasonForVL],['Work Group',d.workGroup],['Site',d.site],['Accruals',d.accrualNum+' credits'],['Month',d.month],['Birthday Date',d.bdayDate||'—']];
+      var rows=[['LDAP',d.ldap],['Channel',d.channel],['VL Date',d.vlDate],['Team Lead',d.teamLead],['Reason for VL',formatReason(d.reasonForVL)],['Work Group',d.workGroup],['Site',d.site],['Accruals',d.accrualNum+' credits'],['Month',d.month],['Birthday Date',d.bdayDate||'—']];
   document.getElementById('cnfRows').innerHTML=rows.map(function(r){return'<div class="crow"><span class="cl">'+r[0]+'</span><span class="cv">'+(r[1]||'—')+'</span></div>'}).join('');
   document.getElementById('cnfOv').classList.add('on');
 }
@@ -2648,9 +2663,9 @@ function submitForm(){
       closeConfirm();
       if(res.status==='success'){
         var isBday=_pendingData.reasonForVL==='Birthday';
-        document.getElementById('sucTitle').textContent=isBday?'🎂 Happy Birthday! 🎉':'Application Submitted!';
-        document.getElementById('sucTxt').textContent=isBday?'Your Birthday Leave has been filed! Celebrate your special day! 🎈':'Your leave request has been logged. You\'ll be notified once reviewed.';
-        document.getElementById('sucDet').innerHTML='<strong>'+_pendingData.ldap+' — '+_pendingData.vlDate+'</strong><br>'+_pendingData.channel+' · '+_pendingData.reasonForVL+' · '+_pendingData.workGroup+' · '+_pendingData.site;
+        document.getElementById('sucTitle').textContent=isBday?'Happy Birthday!':'Application Submitted!';
+        document.getElementById('sucTxt').textContent=isBday?'Your Birthday Leave has been filed! Celebrate your special day!':'Your leave request has been logged. You\'ll be notified once reviewed.';
+        document.getElementById('sucDet').innerHTML='<strong>'+_pendingData.ldap+' — '+_pendingData.vlDate+'</strong><br>'+_pendingData.channel+' · '+formatReason(_pendingData.reasonForVL)+' · '+_pendingData.workGroup+' · '+_pendingData.site;
         document.getElementById('sucEmail').textContent='📧 A confirmation will be sent once your request is reviewed.';
         document.getElementById('sucOv').classList.add('on');
         if(isBday)setTimeout(function(){confetti({particleCount:140,spread:80,origin:{y:.6}})},350);
@@ -2776,11 +2791,11 @@ function _doLiveSync(){
         if(addedEvents.length>0){
           var names=addedEvents.slice(0,2).map(function(e){return e.ldap}).join(', ');
           var extra=addedEvents.length>2?' +'+(addedEvents.length-2)+' more':'';
-          showToast('📅 New VL filed: '+names+extra,'info',5000);
+          showToast('New VL filed: '+names+extra,'info',5000);
         }
         if(addedEvents.length>0&&_currentViewEvent){
           var conflict=addedEvents.find(function(e){return e.date===_currentViewEvent.date&&e.channel===_currentViewEvent.channel});
-          if(conflict){setSyncState('conflict','⚠ Slot conflict!');showToast('⚠️ '+conflict.ldap+' just filed '+conflict.channel+' for the same date!','warn',8000)}
+          if(conflict){setSyncState('conflict','Slot conflict!');showToast(conflict.ldap+' just filed '+conflict.channel+' for the same date!','warn',8000)}
         }
       }else setSyncState('idle');
     })

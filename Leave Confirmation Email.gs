@@ -14,7 +14,7 @@ const CONFIG = {
   LOG_SHEET_NAME:      "Update Log 1.0",
   ADMIN_EMAIL:         "admin@google.com",           // ← Your email for summaries & error reports
   REPLY_TO_EMAIL:      "gup-play-ops@google.com",    // ← Reply-to address for agents
-  SENDER_NAME:         "gUp Play - Leave Notification",
+  SENDER_NAME:         "gUp Play Support System",
   DASHBOARD_LINK:      "https://docs.google.com/spreadsheets/d/1RTDHOg74c92d3jTivh5qA6XgpRPPsHPYsX6nTTl_aPs/edit?gid=727043204#gid=727043204",
 
   // Update Log: only watch these columns (1-indexed) on the Leave Results sheet
@@ -154,24 +154,10 @@ function _runNotifications(isDryRun) {
       const formattedDate = Utilities.formatDate(new Date(vlDate), Session.getScriptTimeZone(), "MMMM dd, yyyy");
       const lowerStatus   = status.toString().toLowerCase();
 
-      // --- EMOJI LOGIC ---
-      let emoji = "⚠️";
-      if      (lowerStatus.includes("birthday"))       emoji = "🎂";
-      else if (lowerStatus.includes("approved"))        emoji = "✅";
-      else if (lowerStatus.includes("denied"))          emoji = "⛔";
-      else if (lowerStatus.includes("no allocation"))   emoji = "🚫";
-      else if (lowerStatus.includes("pending"))         emoji = "⏳";
-      else if (lowerStatus.includes("no accruals"))     emoji = "📉";
-      else if (lowerStatus.includes("emergency"))       emoji = "🚨";
-      else if (lowerStatus.includes("support"))         emoji = "🛠️";
-      else if (lowerStatus.includes("duplicate"))       emoji = "🔁";
-      else if (lowerStatus.includes("wrong date"))      emoji = "📅";
-      else if (lowerStatus.includes("not in roster"))   emoji = "❓";
-
-      const subject   = `${emoji} Play Leave Application - ${status}`;
+      const subject   = `Play Leave Application - ${status}`;
       const emailBody = createEmailTemplate(
         ldap, formattedDate, status, queue, team, reason,
-        workgroupCombined, comments, timestamp, emoji,
+        workgroupCombined, comments, timestamp, "",
         accruals, attendance, site, confirmation
       );
 
@@ -191,7 +177,7 @@ function _runNotifications(isDryRun) {
           ldap:         ldap,
           date:         formattedDate,
           status:       status,
-          emoji:        emoji,
+          emoji:        "",
           queue:        queue,
           site:         site,
           workgroup:    workgroupCombined,
@@ -227,7 +213,7 @@ function _runNotifications(isDryRun) {
         const sentAt      = new Date();
         const sentAtLabel = Utilities.formatDate(sentAt, Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm:ss");
         sheet.getRange(i + 2, COL.SENT_STATUS + 1).setValue("Sent");
-        sheet.getRange(i + 2, COL.SENT_AT + 1).setValue(`${sentAtLabel} by ${adminEmail}`);
+        sheet.getRange(i + 2, COL.SENT_AT + 1).setValue(`${sentAtLabel} by System-Automated`);
 
         emailsSent++;
       }
@@ -299,7 +285,7 @@ function _sendSupervisorSummaries(supervisorMap) {
       <tr style="border-bottom: 1px solid #f1f3f4;">
         <td style="padding: 12px 10px; color: #202124; font-weight: 500;">${e.ldap}</td>
         <td style="padding: 12px 10px; color: #202124;">${e.date}</td>
-        <td style="padding: 12px 10px; font-weight: bold; color: ${statusColor};">${e.emoji} ${e.status}</td>
+        <td style="padding: 12px 10px; font-weight: bold; color: ${statusColor};">${e.status}</td>
         <td style="padding: 12px 10px; color: #202124;">${e.queue}</td>
         <td style="padding: 12px 10px; color: #202124;">${e.site || "-"}</td>
         <td style="padding: 12px 10px; color: #1a73e8; font-weight: 600;">${e.workgroup}</td>
@@ -612,8 +598,8 @@ function createEmailTemplate(ldap, date, status, queue, team, reason, workgroup,
         <div style="display: inline-block; padding: 8px 16px; background-color: ${statusBg}; border-radius: 100px; margin-bottom: 16px;">
           <span style="font-size: 14px; font-weight: 700; color: ${statusColor}; text-transform: uppercase; letter-spacing: 0.8px;">${status}</span>
         </div>
-        <h1 style="font-size: 36px; font-weight: 400; color: #202124; margin: 0; letter-spacing: -0.5px;">${emoji} Update for ${ldap}</h1>
-        <p style="font-size: 16px; color: #5f6368; margin-top: 12px;">Your leave request for <strong>${date}</strong> has been reviewed.</p>
+        <h1 style="font-size: 36px; font-weight: 400; color: #202124; margin: 0; letter-spacing: -0.5px;">Update for ${ldap}</h1>
+        <p style="font-size: 16px; color: #5f6368; margin-top: 12px;">Your leave request for <strong>${date}</strong> has been reviewed by the system.</p>
       </div>
 
       <!-- Details Card -->
