@@ -292,17 +292,15 @@
     .empty-state{text-align:center;padding:40px 20px;color:var(--text-muted);display:flex;flex-direction:column;align-items:center}
     .empty-state svg{width:80px;height:80px;fill:var(--border-light);margin-bottom:16px}
 
-    /* ── OVERFLOW MODAL (Centered) ── */
-    #overflowOv { z-index: 5000; }
-    .sd-cm { max-width: 460px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; }
-    .sd-head{padding: 24px 28px; border-bottom:1px solid var(--border-grid);display:flex;flex-direction:column;gap:8px;position:relative; background: var(--bg-sidebar);}
-    .sd-title-wrap{display:flex;justify-content:space-between;align-items:flex-start}
-    .sd-title{font-family:'Google Sans Display';font-size:22px;font-weight:700;color:var(--text-title);letter-spacing:-0.5px}
-    .sd-holiday{display:inline-flex;align-items:center;gap:8px;background:var(--orange-bg);color:var(--orange-txt);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;margin-top:4px}
-    .sd-close{background:transparent;border:none;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;color:var(--text-muted)}
-    .sd-close:hover{background:var(--bg-cell-hover);color:var(--text-main)}
-    .sd-list{flex:1;overflow-y:auto;padding:20px 28px 28px;display:flex;flex-direction:column;gap:12px}
-    .sd-empty{text-align:center;padding:60px 24px;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:16px}
+    /* ── OVERFLOW POPOVER ── */
+    .popover-ov{width:320px;pointer-events:auto}
+    .popover-ov.on{display:flex}
+    .sd-head{padding:14px 16px;border-bottom:1px solid var(--border-grid);display:flex;flex-direction:column;gap:4px;position:relative;background:var(--bg-sidebar);border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+    .sd-title-wrap{display:flex;justify-content:space-between;align-items:center}
+    .sd-title{font-family:'Google Sans Display';font-size:16px;font-weight:700;color:var(--text-title)}
+    .sd-holiday{display:inline-flex;align-items:center;gap:6px;background:var(--orange-bg);color:var(--orange-txt);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;margin-top:2px}
+    .sd-list{flex:1;max-height:400px;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:6px}
+    .sd-empty{text-align:center;padding:30px 12px;color:var(--text-muted);display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12px}
     .sd-empty svg{width:64px;height:64px;opacity:0.2}
     .sd-cap-box{background:var(--bg-sidebar);border-radius:var(--radius-lg);padding:16px;margin-bottom:8px;border:1px solid var(--border-grid)}
     .sd-cap-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:12px}
@@ -702,17 +700,15 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
   </div>
 </div>
 
-<div class="ov" id="overflowOv">
-  <div class="cm sd-cm" id="overflowModal">
-    <div class="sd-head">
-      <div class="sd-title-wrap">
-        <div class="sd-title" id="overflowTitle">Date Details</div>
-        <button class="sd-close" onclick="closeOverflow()">✕</button>
-      </div>
-      <div id="sdHolidayRow" class="sd-holiday" style="display:none;border:1px solid var(--orange-main)"><span class="material-symbols-rounded" style="font-size:18px">celebration</span> <span id="sdHolidayTxt"></span></div>
+<div class="popover popover-ov" id="overflowPopover" onmouseenter="clearTimeout(poOvTimer)" onmouseleave="closeOverflowPopover()">
+  <div id="overflowCaret" class="popover-caret"></div>
+  <div class="sd-head">
+    <div class="sd-title-wrap">
+      <div class="sd-title" id="overflowTitle">Date Details</div>
     </div>
-    <div class="sd-list" id="overflowList"></div>
+    <div id="sdHolidayRow" class="sd-holiday" style="display:none;border:1px solid var(--orange-main)"><span class="material-symbols-rounded" style="font-size:16px">celebration</span> <span id="sdHolidayTxt"></span></div>
   </div>
+  <div class="sd-list" id="overflowList"></div>
 </div>
 
 <div class="popover" id="eventPopover">
@@ -1015,6 +1011,7 @@ let acSortCol='date';
 let acSortDir='asc';
 let _ctxEventId=null;
 let poTimer=null;
+let poOvTimer=null;
 // QoL #1: LDAP dropdown keyboard nav state
 let _ldapFocusIdx=-1;
 
@@ -1228,7 +1225,7 @@ document.addEventListener('keydown',function(e){
     if(document.getElementById('adminOv').classList.contains('on')){document.getElementById('adminOv').classList.remove('on');return}
     if(document.getElementById('formModal').classList.contains('on')){closeForm();return}
     if(document.getElementById('userDrawer').classList.contains('on')){closeDrawer();return}
-    if(document.getElementById('overflowOv').classList.contains('on')){closeOverflow();return}
+    if(document.getElementById('overflowPopover').classList.contains('on')){document.getElementById('overflowPopover').classList.remove('on');return}
   }
 });
 
@@ -2281,7 +2278,7 @@ function renderCalendar(){
 
     if(dayEvents.length>4){
       dayEvents.slice(0,4).forEach(function(e){html+=renderEventChip(e)});
-      html+='<div class="event-more" onclick="showDayOverflow(event,\''+dateStr+'\')">+' +(dayEvents.length-4)+' others</div>';
+      html+='<div class="event-more" onmouseenter="showDayOverflow(event,\''+dateStr+'\')" onmouseleave="closeOverflowPopover()">+' +(dayEvents.length-4)+' others</div>';
     }else{
       dayEvents.forEach(function(e){html+=renderEventChip(e)});
     }
@@ -2293,63 +2290,91 @@ function renderCalendar(){
   for(var j=0;j<remaining;j++)grid.innerHTML+='<div class="cell inactive"></div>';
 }
 
-/* QoL #5: Smarter overflow modal positioning */
+/* QoL #5: Overflow popover with intelligent positioning */
 function showDayOverflow(ev,dateStr){
-  if(ev) ev.stopPropagation();
-  var activeWGs=Array.from(document.querySelectorAll('.wg-filter:checked')).map(function(el){return el.value});
-  var activeSites=Array.from(document.querySelectorAll('.st-filter:checked')).map(function(el){return el.value});
-  var activeChans=Array.from(document.querySelectorAll('.ch-filter:checked')).map(function(el){return el.value});
-  var activeStats=Array.from(document.querySelectorAll('.stat-filter:checked')).map(function(el){return el.value});
-  var activeReasons=Array.from(document.querySelectorAll('.rs-filter:checked')).map(function(el){return el.value});
-  var searchQuery=document.getElementById('ldapSearch').value.toLowerCase();
+  clearTimeout(poOvTimer);
+  var target = ev.currentTarget;
+  poOvTimer = setTimeout(function(){
+    var activeWGs=Array.from(document.querySelectorAll('.wg-filter:checked')).map(function(el){return el.value});
+    var activeSites=Array.from(document.querySelectorAll('.st-filter:checked')).map(function(el){return el.value});
+    var activeChans=Array.from(document.querySelectorAll('.ch-filter:checked')).map(function(el){return el.value});
+    var activeStats=Array.from(document.querySelectorAll('.stat-filter:checked')).map(function(el){return el.value});
+    var activeReasons=Array.from(document.querySelectorAll('.rs-filter:checked')).map(function(el){return el.value});
+    var searchQuery=document.getElementById('ldapSearch').value.toLowerCase();
 
-  var rawDayEvents=serverEvents.filter(function(e){
-    var stat=getStatProps(e.status);
-    return e.date===dateStr && activeWGs.includes(e.workGroup) && activeSites.includes(e.site) && activeChans.includes(e.channel) && activeStats.includes(stat.key) && activeReasons.includes(e.reason) && e.ldap.toLowerCase().includes(searchQuery) && (!teamViewActive || e.teamLead===myTeamName);
-  });
+    var rawDayEvents=serverEvents.filter(function(e){
+      var stat=getStatProps(e.status);
+      return e.date===dateStr && activeWGs.includes(e.workGroup) && activeSites.includes(e.site) && activeChans.includes(e.channel) && activeStats.includes(stat.key) && activeReasons.includes(e.reason) && e.ldap.toLowerCase().includes(searchQuery) && (!teamViewActive || e.teamLead===myTeamName);
+    });
 
-  var dayEvents=[],seenKeys=new Set();
-  rawDayEvents.forEach(function(e){var k=e.ldap.toLowerCase()+'|'+e.channel.toLowerCase();if(!seenKeys.has(k)){seenKeys.add(k);dayEvents.push(e)}});
+    var dayEvents=[],seenKeys=new Set();
+    rawDayEvents.forEach(function(e){var k=e.ldap.toLowerCase()+'|'+e.channel.toLowerCase();if(!seenKeys.has(k)){seenKeys.add(k);dayEvents.push(e)}});
 
-  var d=new Date(dateStr+'T00:00:00');
-  document.getElementById('overflowTitle').innerText=MO_NAMES[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+    var d=new Date(dateStr+'T00:00:00');
+    document.getElementById('overflowTitle').innerText=MO_NAMES[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
 
-  // Holiday check
-  var holiday = HOLIDAYS_2026[dateStr];
-  var holRow = document.getElementById('sdHolidayRow');
-  if(holiday){
-    document.getElementById('sdHolidayTxt').innerText = holiday;
-    holRow.style.display = 'inline-flex';
-  } else {
-    holRow.style.display = 'none';
-  }
+    var holiday = HOLIDAYS_2026[dateStr];
+    var holRow = document.getElementById('sdHolidayRow');
+    if(holiday){
+      document.getElementById('sdHolidayTxt').innerText = holiday;
+      holRow.style.display = 'inline-flex';
+    } else {
+      holRow.style.display = 'none';
+    }
 
-  var listHtml='';
-  dayEvents.forEach(function(e){
-    var statProps=getStatProps(e.status);
-    var colorClass=channelColors[e.channel]||'ch-chat';
-    var wgClass=wgColors[e.workGroup]||'';
-    var wgEvCls=wgEvClass[e.workGroup]||'';
-    var dotHtml=wgClass?'<span class="wg-dot '+wgClass+'"></span>':'';
-    var momaPrimary='https://moma-teams-photos.corp.google.com/photos/'+e.ldap+'?sz=100&type=PLUS';
-    var momaFallback='https://moma-teams-photos.corp.google.com/photos/'+e.ldap+'?sz=100&type=SECURITY&type=SILHOUETTE';
-    var avatarHtml='<img src="'+momaPrimary+'" class="ev-avatar" style="width:32px;height:32px" onerror="this.onerror=null;this.src=\''+momaFallback+'\';">';
-    var rsClass=(e.reason==='Birthday')?'rs-bday':'';
-    var style = '';
-    if(wgClass) style = 'border-left: 4px solid var(--'+wgClass+');';
+    var listHtml='';
+    dayEvents.forEach(function(e){
+      var statProps=getStatProps(e.status);
+      var colorClass=channelColors[e.channel]||'ch-chat';
+      var wgClass=wgColors[e.workGroup]||'';
+      var wgEvCls=wgEvClass[e.workGroup]||'';
+      var dotHtml=wgClass?'<span class="wg-dot '+wgClass+'"></span>':'';
+      var momaPrimary='https://moma-teams-photos.corp.google.com/photos/'+e.ldap+'?sz=100&type=PLUS';
+      var momaFallback='https://moma-teams-photos.corp.google.com/photos/'+e.ldap+'?sz=100&type=SECURITY&type=SILHOUETTE';
+      var avatarHtml='<img src="'+momaPrimary+'" class="ev-avatar" style="width:32px;height:32px" onerror="this.onerror=null;this.src=\''+momaFallback+'\';">';
+      var rsClass=(e.reason==='Birthday')?'rs-bday':'';
+      var style = '';
+      if(wgClass) style = 'border-left: 4px solid var(--'+wgClass+');';
 
-    listHtml+='<div class="event '+colorClass+' '+statProps.cls+' '+rsClass+' '+wgEvCls+'" style="'+style+'margin-bottom:4px;padding:6px 12px;height:auto" onclick="openViewModal(event,\''+e.id+'\')" onmouseenter="showEventDetails(event,\''+e.id+'\')" onmouseleave="closePopover()" oncontextmenu="openCtxMenu(event,\''+e.id+'\')" tabindex="0" role="button" aria-label="'+e.ldap+' - '+e.channel+'">'+ avatarHtml+'<span class="ev-name" style="font-size:14px;margin-left:8px">'+e.ldap+'</span>'+dotHtml+'</div>';
-  });
+      listHtml+='<div class="event '+colorClass+' '+statProps.cls+' '+rsClass+' '+wgEvCls+'" style="'+style+'margin-bottom:4px;padding:6px 12px;height:auto" onclick="openViewModal(event,\''+e.id+'\')" onmouseenter="showEventDetails(event,\''+e.id+'\')" onmouseleave="closePopover()" oncontextmenu="openCtxMenu(event,\''+e.id+'\')" tabindex="0" role="button" aria-label="'+e.ldap+' - '+e.channel+'">'+ avatarHtml+'<span class="ev-name" style="font-size:14px;margin-left:8px">'+e.ldap+'</span>'+dotHtml+'</div>';
+    });
 
-  if(dayEvents.length===0) {
-    listHtml += '<div class="sd-empty"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/><path d="M7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z"/></svg><p>No matches found for this day.</p></div>';
-  }
+    if(dayEvents.length===0) {
+      listHtml += '<div class="sd-empty"><span class="material-symbols-rounded" style="font-size:48px">event_busy</span><p>No matches found for this day.</p></div>';
+    }
 
-  document.getElementById('overflowList').innerHTML=listHtml;
-  document.getElementById('overflowOv').classList.add('on');
+    var po=document.getElementById('overflowPopover');
+    document.getElementById('overflowList').innerHTML=listHtml;
+    po.style.display='flex';
+
+    /* Position & Caret Logic */
+    var rect = target.getBoundingClientRect();
+    var poW = 320;
+    var poH = po.offsetHeight || 300;
+    var left = rect.left + (rect.width/2) - (poW/2);
+    var top = rect.top + rect.height + 10;
+    var posClass = 'pos-bottom';
+
+    if(top + poH > window.innerHeight){
+      top = rect.top - poH - 10;
+      posClass = 'pos-top';
+    }
+    if(left < 10) left = 10;
+    if(left + poW > window.innerWidth - 10) left = window.innerWidth - poW - 10;
+
+    var caret = document.getElementById('overflowCaret');
+    var caretLeft = (rect.left + rect.width/2) - left - 6;
+    caret.style.left = caretLeft + 'px';
+
+    po.style.left=left+'px';po.style.top=top+'px';
+    po.className = 'popover popover-ov on ' + posClass;
+  }, 150);
 }
-function closeOverflow(){
-  document.getElementById('overflowOv').classList.remove('on');
+function closeOverflowPopover(){
+  clearTimeout(poOvTimer);
+  poOvTimer = setTimeout(function(){
+    document.getElementById('overflowPopover').classList.remove('on');
+  }, 100);
 }
 
 /* QoL #14: Popover with intelligent caret side and delay */
