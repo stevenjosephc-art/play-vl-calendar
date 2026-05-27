@@ -619,7 +619,6 @@ body.theme-dusk .cell.weekend,body.theme-amethyst .cell.weekend{background:var(-
     <button class="btn-create btn-play-shine" id="btnCreateVL" onclick="openFormForCurrentMonth()">
       <span class="material-symbols-rounded" style="font-size:28px">add</span>
       Request VL
-      <span class="slot-badge" id="slotBadge"></span>
     </button>
     <div class="search-container">
       <span class="material-symbols-rounded" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none">search</span>
@@ -1278,22 +1277,7 @@ function debouncedRender(){
 }
 
 /* QoL #8: Slot availability badge */
-function updateSlotBadge(){
-  var today=new Date();
-  var todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
-  var todayEvents=serverEvents.filter(function(e){return e.date===todayStr&&getStatProps(e.status).key!=='rejected'});
-  var chatCount=todayEvents.filter(function(e){return e.channel==='Chat'}).length;
-  var phoneCount=todayEvents.filter(function(e){return e.channel==='Phone'}).length;
-  var chatLeft=Math.max(0,2-chatCount);
-  var phoneLeft=Math.max(0,1-phoneCount);
-  var badge=document.getElementById('slotBadge');
-  if(!badge)return;
-  var parts=[];
-  if(chatLeft>0)parts.push('Chat: '+chatLeft+'/2');
-  if(phoneLeft>0)parts.push('Phone: '+phoneLeft+'/1');
-  if(parts.length>0){badge.textContent=parts.join(' · ');badge.classList.add('visible')}
-  else{badge.textContent='Full today';badge.classList.add('visible')}
-}
+function updateSlotBadge(){}
 
 function formatMonthLabel(raw){var d=new Date(raw);if(!isNaN(d.getTime())&&raw.length>8)return MO_SHORT[d.getMonth()]+' '+d.getFullYear();return raw}
 function normalizeMonthFull(raw){var d=new Date(raw);if(!isNaN(d.getTime())&&raw.length>8)return MO_NAMES[d.getMonth()]+' '+d.getFullYear();return raw}
@@ -1783,50 +1767,6 @@ function getWeekBoundaries(dateStr) {
   return { start: fmt(start), end: fmt(end) };
 }
 
-function checkCapacity(dateStr, workgroup, channel, site, excludeId) {
-  var groupA = ['Play NA', 'Play GTV'];
-  var groupB = ['Play HVU', 'Play VIP'];
-
-  var relevantEvents = serverEvents.filter(e => {
-    if (e.id === excludeId) return false;
-    var stat = getStatProps(e.status).key;
-    if (stat === 'rejected') return false;
-    return true;
-  });
-
-  var week = getWeekBoundaries(dateStr);
-
-  if (groupA.includes(workgroup)) {
-    var groupAEvents = relevantEvents.filter(e => groupA.includes(e.workGroup));
-
-    if (channel === 'Chat') {
-      // Daily Site Limit
-      var siteGroup = (site === 'CEB') ? 'CEB' : 'VNCC/UBT';
-      var dailyUsed = groupAEvents.filter(e => e.date === dateStr && e.channel === 'Chat' && (siteGroup === 'CEB' ? e.site === 'CEB' : (e.site === 'VNCC' || e.site === 'UBT'))).length;
-      if (dailyUsed >= 1) return { canSubmit: false, message: 'Chat capacity for ' + siteGroup + ' is full for this day (Limit: 1).' };
-
-      // Weekly Total Limit
-      var weeklyUsed = groupAEvents.filter(e => e.date >= week.start && e.date <= week.end && e.channel === 'Chat').length;
-      if (weeklyUsed >= 14) return { canSubmit: false, message: 'Total Chat capacity for the week is full (Limit: 14).' };
-
-    } else if (channel === 'Phone' || channel === 'Email') {
-      // Daily Limit
-      var dailyUsed = groupAEvents.filter(e => e.date === dateStr && e.channel === channel).length;
-      if (dailyUsed >= 1) return { canSubmit: false, message: channel + ' capacity is full for this day (Limit: 1).' };
-
-      // Weekly Limit
-      var weeklyUsed = groupAEvents.filter(e => e.date >= week.start && e.date <= week.end && e.channel === channel).length;
-      if (weeklyUsed >= 3) return { canSubmit: false, message: channel + ' capacity for the week is full (Limit: 3).' };
-    }
-  } else if (groupB.includes(workgroup)) {
-    var groupBEvents = relevantEvents.filter(e => groupB.includes(e.workGroup));
-    // Weekly Total across all channels
-    var weeklyUsed = groupBEvents.filter(e => e.date >= week.start && e.date <= week.end).length;
-    if (weeklyUsed >= 3) return { canSubmit: false, message: 'Play HVU/VIP shared capacity for the week is full (Limit: 3 across all channels).' };
-  }
-
-  return { canSubmit: true };
-}
 
 function generateScorecard(dateStr,channel,site){
   var d=new Date(dateStr+'T00:00:00');
@@ -2331,7 +2271,7 @@ function changeMonth(dir){
 
 function renderCalendar(){
   var grid=document.getElementById('calGrid');
-  grid.innerHTML='';
+  var fragment=document.createDocumentFragment();
   var year=currentDate.getFullYear();
   var month=currentDate.getMonth();
   var titleEl=document.getElementById('monthDisplay');
@@ -2346,7 +2286,18 @@ function renderCalendar(){
   var activeReasons=Array.from(document.querySelectorAll('.rs-filter:checked')).map(function(el){return el.value});
   var searchQuery=document.getElementById('ldapSearch').value.toLowerCase();
 
-  for(var i=0;i<firstDay;i++)grid.innerHTML+='<div class="cell inactive"></div>';
+  // Optimization: Group events by date once
+  var eventsByDate = {};
+  serverEvents.forEach(function(e){
+    if(!eventsByDate[e.date]) eventsByDate[e.date] = [];
+    eventsByDate[e.date].push(e);
+  });
+
+  for(var i=0;i<firstDay;i++){
+    var empty=document.createElement('div');
+    empty.className='cell inactive';
+    fragment.appendChild(empty);
+  }
 
   for(var day=1;day<=daysInMonth;day++){
     var isToday=(day===today.getDate()&&month===today.getMonth()&&year===today.getFullYear());
@@ -2356,30 +2307,15 @@ function renderCalendar(){
     var wkndClass=(dayOfWeek===0||dayOfWeek===6)?'weekend':'';
     var holidayClass = holidayName ? 'is-holiday' : '';
     var staggerDelay = (day % 14) * 0.02;
-    var html='<div class="cell '+wkndClass+' '+holidayClass+' '+(isToday?'today':'')+'" onclick="openFormForDate(\''+dateStr+'\')" tabindex="0" role="gridcell" aria-label="'+MO_NAMES[month]+' '+day+'" style="animation-delay:'+staggerDelay+'s">';
-    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;">';
+    var html='<div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;">';
     html += '<div class="date-num '+(isToday?'today-num':'')+'">'+ day+'</div>';
     if(holidayName) html += '<div class="holiday-badge" title="'+holidayName+'"><span class="material-symbols-rounded" style="font-size:12px">celebration</span> '+holidayName+'</div>';
     html += '</div>';
 
-    // Capacity Indicators (Group A focus)
-    var groupA = ['Play NA', 'Play GTV'];
-    var gAEvents = serverEvents.filter(e => groupA.includes(e.workGroup) && e.date === dateStr && getStatProps(e.status).key !== 'rejected');
-    var chatCeb = gAEvents.filter(e => e.channel === 'Chat' && e.site === 'CEB').length;
-    var chatOther = gAEvents.filter(e => e.channel === 'Chat' && (e.site === 'VNCC' || e.site === 'UBT')).length;
-    var phone = gAEvents.filter(e => e.channel === 'Phone').length;
-
-    if (chatCeb > 0 || chatOther > 0 || phone > 0) {
-      html += '<div style="display:flex;gap:3px;margin:2px 6px 4px;flex-wrap:nowrap;overflow:hidden">';
-      if(chatCeb > 0) html += '<div title="Chat CEB: '+chatCeb+'/1" style="flex:1;height:3px;border-radius:2px;background:'+(chatCeb>=1?'var(--red-main)':'var(--green-main)')+'"></div>';
-      if(chatOther > 0) html += '<div title="Chat Other: '+chatOther+'/1" style="flex:1;height:3px;border-radius:2px;background:'+(chatOther>=1?'var(--red-main)':'var(--green-main)')+'"></div>';
-      if(phone > 0) html += '<div title="Phone: '+phone+'/1" style="flex:1;height:3px;border-radius:2px;background:'+(phone>=1?'var(--red-main)':'var(--blue-main)')+'"></div>';
-      html += '</div>';
-    }
-
-    var rawDayEvents=serverEvents.filter(function(e){
+    var dayData = eventsByDate[dateStr] || [];
+    var rawDayEvents = dayData.filter(function(e){
       var stat=getStatProps(e.status);
-      return e.date&&e.date.includes(dateStr)&&activeWGs.includes(e.workGroup)&&activeSites.includes(e.site)&&activeChans.includes(e.channel)&&activeStats.includes(stat.key)&&activeReasons.includes(e.reason)&&e.ldap.toLowerCase().includes(searchQuery)&&(!teamViewActive||e.teamLead===myTeamName);
+      return activeWGs.includes(e.workGroup)&&activeSites.includes(e.site)&&activeChans.includes(e.channel)&&activeStats.includes(stat.key)&&activeReasons.includes(e.reason)&&e.ldap.toLowerCase().includes(searchQuery)&&(!teamViewActive||e.teamLead===myTeamName);
     });
     var dayEvents=[],seenKeys=new Set();
     rawDayEvents.forEach(function(e){var k=e.ldap.toLowerCase()+e.channel.toLowerCase();if(!seenKeys.has(k)){seenKeys.add(k);dayEvents.push(e)}});
@@ -2406,12 +2342,26 @@ function renderCalendar(){
     }else{
       dayEvents.forEach(function(e){html+=renderEventChip(e)});
     }
-    grid.innerHTML+=html+'</div>';
+    var dayCell=document.createElement('div');
+    dayCell.className='cell '+wkndClass+' '+holidayClass+' '+(isToday?'today':'');
+    dayCell.onclick=(function(ds){return function(){openFormForDate(ds)}})(dateStr);
+    dayCell.setAttribute('tabindex','0');
+    dayCell.setAttribute('role','gridcell');
+    dayCell.setAttribute('aria-label',MO_NAMES[month]+' '+day);
+    dayCell.style.animationDelay=staggerDelay+'s';
+    dayCell.innerHTML=html;
+    fragment.appendChild(dayCell);
   }
   var totalCells=firstDay+daysInMonth;
   var rows=Math.ceil(totalCells/7);
   var remaining=(rows*7)-totalCells;
-  for(var j=0;j<remaining;j++)grid.innerHTML+='<div class="cell inactive"></div>';
+  for(var j=0;j<remaining;j++){
+    var empty=document.createElement('div');
+    empty.className='cell inactive';
+    fragment.appendChild(empty);
+  }
+  grid.innerHTML='';
+  grid.appendChild(fragment);
 }
 
 /* QoL #5: Overflow popover with intelligent positioning */
@@ -2612,11 +2562,16 @@ function openViewModal(ev,targetId){
   var deleteBtn=document.getElementById('btnDeleteRequest');
   var isOwner=e.email&&currentUserEmail&&e.email.toLowerCase()===currentUserEmail.toLowerCase();
   var isDeletable=stat.key!=='approved';
-  var canDelete=(isOwner&&isDeletable)||isAdmin;
+  var canDelete=(isOwner&&isDeletable)||isAdmin||isSupervisor;
   if(deleteBtn){
     deleteBtn.style.display=canDelete?'flex':'none';
-    if(isAdmin&&!isOwner){deleteBtn.style.background='linear-gradient(135deg,#b71c1c,#7f0000)';deleteBtn.title='Admin: Remove this request ('+e.ldap+')'}
-    else{deleteBtn.style.background='linear-gradient(135deg,#ea4335,#c5221f)';deleteBtn.title=''}
+    if((isAdmin||isSupervisor)&&!isOwner){
+      deleteBtn.style.background='linear-gradient(135deg,var(--red-main),#7f0000)';
+      deleteBtn.title='Management: Remove this request ('+e.ldap+')';
+    }else{
+      deleteBtn.style.background='linear-gradient(135deg,var(--red-main),var(--red-bg))';
+      deleteBtn.title='';
+    }
   }
   document.getElementById('viewOv').classList.add('on');
   if(reasonStr==='Birthday'&&stat.key==='approved')setTimeout(function(){confetti({particleCount:100,spread:70,origin:{y:.6},zIndex:3000})},150);
@@ -2835,9 +2790,6 @@ function clientValidate(d){
   var isDuplicate=serverEvents.some(function(e){return e.ldap.toLowerCase()===d.ldap.toLowerCase()&&e.channel.toLowerCase()===d.channel.toLowerCase()&&e.date===d.vlDate});
   if(isDuplicate)return'Duplicate Entry: You already have a '+d.channel+' request for '+d.vlDate+'.';
 
-  // Capacity Check
-  var cap = checkCapacity(d.vlDate, d.workGroup, d.channel, d.site);
-  if (!cap.canSubmit) return cap.message;
 
   return null;
 }
@@ -2907,7 +2859,9 @@ function confirmDeleteRequest(){
   if(!window._currentViewEvent)return;
   var e=window._currentViewEvent;
   var dStr=new Date(e.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  var confirmed=window.confirm('Remove your '+e.channel+' VL request for '+dStr+'?\n\nThis cannot be undone. A record will be kept for audit purposes.');
+  var isOwner = e.email && currentUserEmail && e.email.toLowerCase() === currentUserEmail.toLowerCase();
+  var confirmMsg = isOwner ? 'Remove your ' : 'Management: Remove ' + e.ldap + "\'s ";
+  var confirmed = window.confirm(confirmMsg + e.channel + ' VL request for ' + dStr + '?\n\nThis cannot be undone. A record will be kept for audit purposes.');
   if(!confirmed)return;
   var btn=document.getElementById('btnDeleteRequest');
   if(btn){btn.disabled=true;btn.innerHTML='<div class="spn" style="display:inline-block;border-color:rgba(255,255,255,.4);border-top-color:white;width:14px;height:14px"></div> Removing...'}
@@ -2918,7 +2872,8 @@ function confirmDeleteRequest(){
         document.getElementById('viewOv').classList.remove('on');
         serverEvents=serverEvents.filter(function(ev){return ev.id!==e.id});
         renderCalendar();renderUserRequests();
-        showToast('Your VL request for '+dStr+' has been removed.','success');
+        var successMsg = isOwner ? 'Your VL request' : e.ldap + "\'s request";
+        showToast(successMsg + ' for ' + dStr + ' has been removed.', 'success');
       }else{showToast(res.message||'Could not remove request.','error');if(btn)btn.style.display='flex'}
     })
     .withFailureHandler(function(err){

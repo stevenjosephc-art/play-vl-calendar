@@ -791,16 +791,19 @@ function deleteVLRequest(eventUuid) {
     var rowEmail = (rowData[colMap["emailaddress"]] || "").toString().trim().toLowerCase();
     var status   = (rowData[colMap["status"]] || "").toString().trim().toLowerCase();
 
-    // Only the owner can delete
-    if (rowEmail !== actor.toLowerCase()) {
-      _log("WARN", "deleteVLRequest", "Unauthorized delete attempt", { actor: actor, owner: rowEmail, uuid: eventUuid });
-      return { success: false, message: "You can only remove your own requests." };
-    }
-
-    // Admins can delete anything; regular users cannot delete approved requests
     var config = getFormConfig();
     var isActorAdmin = config.isAdmin;
-    if (!isActorAdmin && (status === "approved" || status.includes("birthday leave"))) {
+    var isActorSup   = config.isSupervisor;
+
+    // Only owner, supervisor, or admin can delete
+    var isOwner = (rowEmail === actor.toLowerCase());
+    if (!isOwner && !isActorAdmin && !isActorSup) {
+      _log("WARN", "deleteVLRequest", "Unauthorized delete attempt", { actor: actor, owner: rowEmail, uuid: eventUuid });
+      return { success: false, message: "You can only remove your own requests unless you are a supervisor or admin." };
+    }
+
+    // Admins/Supervisors can delete anything; regular users cannot delete approved requests
+    if (!isActorAdmin && !isActorSup && (status === "approved" || status.includes("birthday leave"))) {
       return { success: false, message: "Approved requests cannot be removed. Please contact your supervisor." };
     }
 
